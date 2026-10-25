@@ -41,23 +41,39 @@ Skill skills[SKILL_COUNT] = {
     {"Cut Shot", {3,5,6}, 3, EXACT, 20}
 };
 
+int read_int (const char *prompt, int min, int max) {
+    char line[64];
+    int value;
+    printf("%s: ", prompt);
+    while(1) {
+        if (fgets(line, sizeof(line), stdin) == NULL) {
+            printf("\n No more input. \n");
+            exit(1);
+        }
+
+        if(sscanf(line, "%d", &value) == 1 && value >= min && value <= max) {
+            return value;
+        }
+
+        printf("Invalid, enter a zone number between 1 to 6: ");
+    }
+    
+}
+
+void show_court(void)
+{
+    printf("+-----------------+\n");
+    printf("|  1  |  2  |  3  |\n");
+    printf("|-----------------|\n");
+    printf("|  4  |  5  |  6  | \n");
+    printf("+-----------------+\n");
+}
+
+
 int main() 
 {
-    for(int i=0; i<SKILL_COUNT; i++) {
-        printf("%d. %s | Targets: ", i+1, skills[i].name);
-        for(int j=0; j<skills[i].target_count; j++) {
-            printf("%d ", skills[i].targets[j]);
-        }
-        printf("| Catch: ");
-        if (skills[i].catch_rule==EXACT)  {
-            printf("EXACT ");
-        }
-        else if (skills[i].catch_rule==NEIGHBOR) {
-             printf("NEIGHBOR ");
-        }
-        printf("| Fault Chance: %d%% \n", skills[i].fault_chance);
-
-    }
-
+    int zone = read_int("Choose a zone (1-6)", 1, 6);
+    printf("You picked %d. \n", zone);
+    show_court();
     return 0;
 }
