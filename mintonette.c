@@ -1,9 +1,24 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include <stdlib.h>
 
 #define MAX_TARGETS 4
+
+int roll_percent(void) {
+    return rand() % 100 + 1;
+}
+
+int fault(int fault_chance) {
+    int roll = roll_percent();
+    if (roll <= fault_chance) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
 
 typedef enum {
     SERVE_UNDERHAND,
@@ -55,9 +70,15 @@ int read_int (const char *prompt, int min, int max) {
             return value;
         }
 
-        printf("Invalid, enter a zone number between 1 to 6: ");
+        
+
+        printf("Invalid, enter a number between %d to %d: ", min, max);
     }
     
+}
+int pick_landing_zone(SkillId id) {
+    int index = rand() % skills[id].target_count;
+    return skills[id].targets[index];
 }
 
 void show_court(void)
@@ -65,13 +86,25 @@ void show_court(void)
     printf("+-----------------+\n");
     printf("|  1  |  2  |  3  |\n");
     printf("|-----------------|\n");
-    printf("|  4  |  5  |  6  | \n");
+    printf("|  4  |  5  |  6  |\n");
     printf("+-----------------+\n");
 }
 
-
 int main() 
 {
+    srand((unsigned)time(NULL));
+    int faults = 0;
+    int i =0;
+    int counts[7] = {0};
+    for (i=0; i<1000; i++) {
+        int zone = pick_landing_zone(SERVE_JUMP);
+        counts[zone]++;
+    }
+
+    for (i = 1; i <= 6; i++) {
+        printf("zone %d: %d\n", i, counts[i]);
+    }
+
     int zone = read_int("Choose a zone (1-6)", 1, 6);
     printf("You picked %d. \n", zone);
     show_court();
