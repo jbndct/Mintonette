@@ -20,6 +20,26 @@ int fault(int fault_chance) {
     }
 }
 
+void print_mintonette_text() {
+    printf(" __  __ ___ _   _ _____ ___  _   _ _____ _____ _____ _____ \n");
+    printf("|  \\/  |_ _| \\ | |_   _/ _ \\| \\ | | ____|_   _|_   _| ____|\n");
+    printf("| |\\/| || ||  \\| | | || | | |  \\| |  _|   | |   | | |  _|  \n");
+    printf("| |  | || || |\\  | | || |_| | |\\  | |___  | |   | | | |___ \n");
+    printf("|_|  |_|___|_| \\_| |_| \\___/|_| \\_|_____| |_|   |_| |_____|\n");
+}
+
+void print_mintonette_ball() {
+    printf("                     _______\n");
+    printf("                  .-'       '-.\n");
+    printf("                .'   \\  |  /   '.\n");
+    printf("               /      \\ | /      \\\n");
+    printf("              |________\\|/________|\n");
+    printf("              |        /|\\        |\n");
+    printf("               \\      / | \\      /\n");
+    printf("                '.   /  |  \\   .'\n");
+    printf("                  '-._______.-'\n");
+}
+
 typedef enum {
     SERVE_UNDERHAND,
     SERVE_SHORT,
@@ -135,31 +155,72 @@ void show_court(void)
     printf("     +-----------------+     \n");
 }
 
-int main() 
+int main(void) 
 {
+    int attacker = 0;
+    int defender = 1;
+    int last_skill[2] = { -1, -1 };
+    int rally_count = 0;
+    int rally_over = 0;
+    int point_winner = -1;
+    int first;
+    int last;
+    int temp;
+    SkillId id;
+    int landing;
+    int guess;
+    int j;
+    
     srand((unsigned)time(NULL));
-    show_court();
-    SkillId id = ask_skill(SERVE_UNDERHAND, SERVE_JUMP, -1); 
-    if (fault(skills[id].fault_chance)) {
-        printf("Fault! Defender wins the point.");
-    }
-    else {
-        int landing = pick_landing_zone(id);
-        printf("Incoming; %s! Zones:", skills[id].name);
-        for (int j=0; j<skills[id].target_count; j++) {
-            printf(" %d", skills[id].targets[j]);
-        }
-        printf("\n");
 
-        int guess = read_int("Zone to protect: ", 1, 6);
+    print_mintonette_text();
+    print_mintonette_ball();
 
-        if (guess == landing) {
-            printf ("Caught!\n");
+    while(!rally_over) {
+        show_court();
+        printf("Player %d attacks\n", attacker+1);
+        if (rally_count == 0) {
+             first = SERVE_UNDERHAND;
+             last = SERVE_JUMP;
         }
         else {
-            printf("Missed! It landed in zone %d. Attacker wins the point \n", landing);
-    
+             first = COUNTER_DEEP;
+             last = COUNTER_CUT;
         }
+
+        id = ask_skill(first, last, last_skill[attacker]); 
+        last_skill[attacker] = id;
+
+        if (fault(skills[id].fault_chance)) {
+            point_winner = defender;
+            rally_over = 1;
+        }
+        else {
+            landing = pick_landing_zone(id);
+            printf("Incoming: %s! Zones:", skills[id].name);
+            for (int j=0; j<skills[id].target_count; j++) {
+                printf(" %d", skills[id].targets[j]);
+            }
+            printf("\n");
+
+            int guess = read_int("Zone to protect", 1, 6);
+            int caught = is_caught(id, landing, guess); 
+
+            if (caught) {
+                printf ("Caught!\n");
+                int temp = defender;
+                defender = attacker;
+                attacker = temp;
+                rally_count++;
+            }
+            else {
+                printf("Missed! It landed in zone %d. Attacker wins the point \n", landing);
+                point_winner = attacker;
+                rally_over = 1;
+            }
+        }
+        printf("Player %d wins the point!", point_winner + 1);
     }
+    
     return 0;
 }
