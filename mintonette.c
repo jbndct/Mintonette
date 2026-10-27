@@ -6,20 +6,6 @@
 
 #define MAX_TARGETS 4
 
-int roll_percent(void) {
-    return rand() % 100 + 1;
-}
-
-int fault(int fault_chance) {
-    int roll = roll_percent();
-    if (roll <= fault_chance) {
-        return 1;
-    }
-    else {
-        return 0;
-    }
-}
-
 void print_mintonette_text() {
     printf(" __  __ ___ _   _ _____ ___  _   _ _____ _____ _____ _____ \n");
     printf("|  \\/  |_ _| \\ | |_   _/ _ \\| \\ | | ____|_   _|_   _| ____|\n");
@@ -39,6 +25,7 @@ void print_mintonette_ball() {
     printf("                '.   /  |  \\   .'\n");
     printf("                  '-._______.-'\n");
 }
+
 
 typedef enum {
     SERVE_UNDERHAND,
@@ -75,6 +62,21 @@ Skill skills[SKILL_COUNT] = {
     {"Spike", {2,4,5}, 3, EXACT, 25},
     {"Cut Shot", {3,5,6}, 3, EXACT, 20}
 };
+
+
+int roll_percent(void) {
+    return rand() % 100 + 1;
+}
+
+int fault(int fault_chance) {
+    int roll = roll_percent();
+    if (roll <= fault_chance) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
 
 int read_int (const char *prompt, int min, int max) {
     char line[64];
