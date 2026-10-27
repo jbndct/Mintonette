@@ -170,57 +170,78 @@ int main(void)
     int landing;
     int guess;
     int j;
+    int scores[2] = {0, 0};
+    int server = 0;
     
     srand((unsigned)time(NULL));
 
     print_mintonette_text();
     print_mintonette_ball();
+    printf("\n\n\n\n");
 
-    while(!rally_over) {
-        show_court();
-        printf("Player %d attacks\n", attacker+1);
-        if (rally_count == 0) {
-             first = SERVE_UNDERHAND;
-             last = SERVE_JUMP;
-        }
-        else {
-             first = COUNTER_DEEP;
-             last = COUNTER_CUT;
-        }
-
-        id = ask_skill(first, last, last_skill[attacker]); 
-        last_skill[attacker] = id;
-
-        if (fault(skills[id].fault_chance)) {
-            point_winner = defender;
-            rally_over = 1;
-        }
-        else {
-            landing = pick_landing_zone(id);
-            printf("Incoming: %s! Zones:", skills[id].name);
-            for (int j=0; j<skills[id].target_count; j++) {
-                printf(" %d", skills[id].targets[j]);
-            }
-            printf("\n");
-
-            int guess = read_int("Zone to protect", 1, 6);
-            int caught = is_caught(id, landing, guess); 
-
-            if (caught) {
-                printf ("Caught!\n");
-                int temp = defender;
-                defender = attacker;
-                attacker = temp;
-                rally_count++;
+    while ((scores[0] < 10) && (scores[1] < 10)) {
+        attacker = server;
+        defender = 1 - server;
+        rally_count = 0;
+        last_skill[0] = -1;
+        last_skill[1] = -1;
+        rally_over = 0;
+        point_winner = -1;
+        while(!rally_over) {
+            show_court();
+            printf("Player %d attacks\n", attacker+1);
+            if (rally_count == 0) {
+                first = SERVE_UNDERHAND;
+                last = SERVE_JUMP;
             }
             else {
-                printf("Missed! It landed in zone %d. Attacker wins the point \n", landing);
-                point_winner = attacker;
+                first = COUNTER_DEEP;
+                last = COUNTER_CUT;
+            }
+
+            id = ask_skill(first, last, last_skill[attacker]); 
+            last_skill[attacker] = id;
+
+            if (fault(skills[id].fault_chance)) {
+                point_winner = defender;
                 rally_over = 1;
             }
+            else {
+                landing = pick_landing_zone(id);
+                printf("Incoming: %s! Zones:", skills[id].name);
+                for (int j=0; j<skills[id].target_count; j++) {
+                    printf(" %d", skills[id].targets[j]);
+                }
+                printf("\n");
+
+                int guess = read_int("Zone to protect", 1, 6);
+                int caught = is_caught(id, landing, guess); 
+
+                if (caught) {
+                    printf ("Caught!\n");
+                    int temp = defender;
+                    defender = attacker;
+                    attacker = temp;
+                    rally_count++;
+                }
+                else {
+                    printf("Missed! It landed in zone %d. Attacker wins the point \n", landing);
+                    point_winner = attacker;
+                    rally_over = 1;
+                }
+            }
         }
-        printf("Player %d wins the point!", point_winner + 1);
+        printf("Player %d wins the point! \n", point_winner + 1);
+        scores[point_winner]++;
+        server = point_winner;
+        printf("SCORES: Player %d: %d, Player %d: %d \n", 1, scores[0], 2, scores[1]);
     }
-    
+
+    if (scores[0] == 10) {
+        printf("Player %d wins \n", 1);
+    }
+    else if (scores[1] == 10) {
+        printf("Player %d wins \n", 2);
+    }
     return 0;
 }
