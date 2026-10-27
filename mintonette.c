@@ -81,32 +81,85 @@ int pick_landing_zone(SkillId id) {
     return skills[id].targets[index];
 }
 
+int is_caught(SkillId id, int landing, int guess) {
+    if (landing == guess) {
+        return 1;
+    }
+    else if (skills[id].catch_rule == NEIGHBOR) {
+        int row_a = (guess - 1) / 3;
+        int col_a = (guess - 1) % 3;
+        int row_b = (landing - 1) / 3;
+        int col_b = (landing - 1) % 3;
+
+        int row_gap = abs(row_a - row_b);
+        int col_gap = abs(col_a - col_b);
+
+        if (row_gap + col_gap == 1) {
+            return 1;            /* side by side or front/back */
+        }
+    }
+    return 0;
+}
+
+SkillId ask_skill(int first, int last, int banned)
+{
+    int i;
+    int choice;
+    SkillId id;
+
+    for (i = first; i <= last; i++) {
+        printf("%d. %s", i - first + 1, skills[i].name);
+        if (i == banned) {
+            printf(" (used last turn)");
+        }
+        printf("\n");
+    }
+
+    while (1) {
+        choice = read_int("Pick a skill", 1, last - first + 1);
+        id = first + (choice - 1);             
+        if (id != banned) {            
+            return id;
+        }
+        printf("You can't use the same skill twice in a row.\n");
+    }
+}
 void show_court(void)
 {
-    printf("+-----------------+\n");
-    printf("|  1  |  2  |  3  |\n");
-    printf("|-----------------|\n");
-    printf("|  4  |  5  |  6  |\n");
-    printf("+-----------------+\n");
+    printf("+---------------------------+\n");
+    
+    printf("     +-----------------+     \n");
+    printf("     |  1  |  2  |  3  |     \n");
+    printf("     |-----------------|     \n");
+    printf("     |  4  |  5  |  6  |     \n");
+    printf("     +-----------------+     \n");
 }
 
 int main() 
 {
     srand((unsigned)time(NULL));
-    int faults = 0;
-    int i =0;
-    int counts[7] = {0};
-    for (i=0; i<1000; i++) {
-        int zone = pick_landing_zone(SERVE_JUMP);
-        counts[zone]++;
-    }
-
-    for (i = 1; i <= 6; i++) {
-        printf("zone %d: %d\n", i, counts[i]);
-    }
-
-    int zone = read_int("Choose a zone (1-6)", 1, 6);
-    printf("You picked %d. \n", zone);
     show_court();
+    SkillId id = ask_skill(SERVE_UNDERHAND, SERVE_JUMP, -1); 
+    if (fault(skills[id].fault_chance)) {
+        printf("Fault! Defender wins the point.");
+    }
+    else {
+        int landing = pick_landing_zone(id);
+        printf("Incoming; %s! Zones:", skills[id].name);
+        for (int j=0; j<skills[id].target_count; j++) {
+            printf(" %d", skills[id].targets[j]);
+        }
+        printf("\n");
+
+        int guess = read_int("Zone to protect: ", 1, 6);
+
+        if (guess == landing) {
+            printf ("Caught!\n");
+        }
+        else {
+            printf("Missed! It landed in zone %d. Attacker wins the point \n", landing);
+    
+        }
+    }
     return 0;
 }
