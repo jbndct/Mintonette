@@ -123,10 +123,10 @@ int is_caught(SkillId id, int landing, int guess) {
     return 0;
 }
 
-SkillId ask_skill(int first, int last, int banned)
+SkillId ask_skill(SkillId first, SkillId last, SkillId banned)
 {
-    int i;
-    int choice;
+    SkillId i;
+    SkillId choice;
     SkillId id;
 
     for (i = first; i <= last; i++) {
@@ -146,6 +146,39 @@ SkillId ask_skill(int first, int last, int banned)
         printf("You can't use the same skill twice in a row.\n");
     }
 }
+
+int zone_in_skill(SkillId id, int zone) {
+    int i;
+
+    for(i=0; i<skills[id].target_count; i++) {
+        if(skills[id].targets[i] == zone) {return 1;}
+    }
+    return 0;
+}
+
+int ask_zone(SkillId id) {
+    int zone;
+    int j;
+ 
+    while (1) {
+        printf("Aim at one of:");
+        for(j=0; j<skills[id].target_count; j++) {
+            printf(" %d", skills[id].targets[j]);
+        }
+        printf("\n");
+
+        zone = read_int("Aim at zone ", 1, 6);
+        bool in_zone = zone_in_skill(id,zone);
+        if (in_zone) {
+            return zone;
+        }
+        else {
+            printf("That skill can't reach that zone.\n");
+        }
+    }
+
+}
+
 void show_court(void)
 {
     printf("+---------------------------+\n");
@@ -209,19 +242,23 @@ int main(void)
                 rally_over = 1;
             }
             else {
-                landing = pick_landing_zone(id);
+                landing = ask_zone(id);
+
+
                 printf("Incoming: %s! Zones:", skills[id].name);
-                for (int j=0; j<skills[id].target_count; j++) {
+
+        
+                for (j=0; j<skills[id].target_count; j++) {
                     printf(" %d", skills[id].targets[j]);
                 }
                 printf("\n");
 
-                int guess = read_int("Zone to protect", 1, 6);
+                guess = read_int("Zone to protect", 1, 6);
                 int caught = is_caught(id, landing, guess); 
 
                 if (caught) {
                     printf ("Caught!\n");
-                    int temp = defender;
+                    temp = defender;
                     defender = attacker;
                     attacker = temp;
                     rally_count++;
