@@ -3,6 +3,7 @@
 #include <math.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define MAX_TARGETS 4
 
@@ -92,8 +93,6 @@ int read_int (const char *prompt, int min, int max) {
             return value;
         }
 
-        
-
         printf("Invalid, enter a number between %d to %d: ", min, max);
     }
     
@@ -123,11 +122,11 @@ int is_caught(SkillId id, int landing, int guess) {
     return 0;
 }
 
-SkillId ask_skill(SkillId first, SkillId last, SkillId banned)
+int ask_skill(int first, int last, int banned)
 {
-    SkillId i;
-    SkillId choice;
-    SkillId id;
+    int i;
+    int choice;
+    int id;
 
     for (i = first; i <= last; i++) {
         printf("%d. %s", i - first + 1, skills[i].name);
