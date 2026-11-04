@@ -214,8 +214,8 @@ int main(void)
     printf("\n\n\n\n");
 
     while ((scores[0] < 10) && (scores[1] < 10)) {
-        attacker = server;
-        defender = 1 - server;
+        attacker = server; 
+        defender = 1 - server; 
         rally_count = 0;
         last_skill[0] = -1;
         last_skill[1] = -1;
