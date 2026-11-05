@@ -25,7 +25,6 @@ int main(int argc,  char *argv[]){
     }
 
     printf("Player 2 (client) starting ...\n");
-    // Create a socket using TCP
     client_sock = socket(AF_INET,  SOCK_STREAM,  0);
     if (client_sock < 0) 
         die_with_error("Error: socket() Failed.");
@@ -37,7 +36,6 @@ int main(int argc,  char *argv[]){
     }
     printf("Host found!\n");
 
-    // Establish a connection to server
     port_no = atoi(argv[2]);
     bzero((char *) &server_addr,  sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -53,11 +51,12 @@ int main(int argc,  char *argv[]){
 
     printf("Connection successful! You are Player 2! \n");
     
-    
     GameState state;
+    memset(&state, 0, sizeof(GameState));
     PlayerInput my_input;
 
     while (true) {
+        printf("\nWaiting for opponent's turn...\n");
         n = recv(client_sock, &state, sizeof(GameState), 0);
         if (n <= 0) {
             printf("Server disconnected.\n");
@@ -65,18 +64,37 @@ int main(int argc,  char *argv[]){
         }
 
         printf("\n--- SCORES | P1: %d  P2 (You): %d ---\n", state.scores[0], state.scores[1]);
-        printf("Player 1 has taken their move.\n");
 
-        my_input.player_id = 1; 
-        printf("[P2 - YOU] Pick Zone to Protect (1-6): ");
-        scanf("%d", &my_input.guess_zone);
+        if (state.attacker == 1) {
+            // === YOU ARE ATTACKING ===
+            printf("[P2 - YOU ARE ATTACKING]\n");
+            my_input.player_id = 1;
+            
+            printf("Pick Skill (1-8): ");
+            scanf("%d", &my_input.skill_id);
+            printf("Aim Zone (1-6): ");
+            scanf("%d", &my_input.target_zone);
 
-        // 3. Send Player 2 input back to Server
-        n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
-        if (n < 0) die_with_error("Error: send() Failed.");
+            n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
+            if (n < 0) die_with_error("Error: send() Failed.");
 
-        printf("Move sent! Waiting for Player 1...\n");
-}
+            printf("Attack sent! Waiting for Player 1 to defend...\n");
+        } 
+        else {
+            // === YOU ARE DEFENDING ===
+            printf("[P2 - YOU ARE DEFENDING]\n");
+            printf("Player 1 is attacking.\n");
+            my_input.player_id = 1;
+
+            printf("Pick Zone to Protect (1-6): ");
+            scanf("%d", &my_input.guess_zone);
+
+            n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
+            if (n < 0) die_with_error("Error: send() Failed.");
+
+            printf("Defense choice sent! Waiting for turn result...\n");
+        }
+    }
     close(client_sock);
     
     return 0;
