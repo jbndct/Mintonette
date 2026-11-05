@@ -51,11 +51,6 @@ void die_with_error(char *error_msg){
     exit(-1);
 }
 
-//FOR SOCKET
-//RECEIVE
-
-//SEND
-
 //READ INPUT
 int read_int (const char *prompt, int min, int max) {
     char line[64];
@@ -166,10 +161,6 @@ void show_court(void)
     printf("     |  4  |  5  |  6  |     \n");
     printf("     +-----------------+     \n");
 }
-
-//SCORE/UPDATES
-
-//WINNER
 
 
 int main(int argc,  char *argv[]){
