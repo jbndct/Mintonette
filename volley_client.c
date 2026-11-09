@@ -178,7 +178,6 @@ int main(int argc,  char *argv[]){
     printf("\n\n\n\n");
 
     printf("Player 2 (client) starting ...\n");
-    // Create a socket using TCP
     client_sock = socket(AF_INET,  SOCK_STREAM,  0);
     if (client_sock < 0) 
         die_with_error("Error: socket() Failed.");
@@ -187,8 +186,8 @@ int main(int argc,  char *argv[]){
     if (server == NULL) {
         die_with_error("Error: No such host.");
     }
-    
-    //CONNECTION TO SERVER
+    printf("Host found!\n");
+
     port_no = atoi(argv[2]);
     bzero((char *) &server_addr,  sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -203,12 +202,13 @@ int main(int argc,  char *argv[]){
         die_with_error("Error: connect() Failed.");
 
     printf("Connection successful! You are Player 2! \n");
-
+    
     GameState state;
+    memset(&state, 0, sizeof(GameState));
     PlayerInput my_input;
 
     while (true) {
-        //RECEIVE FROM SERVER
+        printf("\nWaiting for opponent's turn...\n");
         n = recv(client_sock, &state, sizeof(GameState), 0);
         if (n <= 0) {
             printf("Server disconnected.\n");
@@ -220,55 +220,35 @@ int main(int argc,  char *argv[]){
 
         show_court();
         printf("\n--- SCORES | P1: %d  P2 (You): %d ---\n", state.scores[0], state.scores[1]);
-        printf("Player 1 has taken their move.\n");
 
-        //IF GAME OVER
-        if ((state.scores[0] < 10) && (state.scores[1] < 10)){
-            if (state.scores[0] == 10) {
-                printf("Player %d wins \n", 1);
-            }
-            else if (state.scores[1] == 10) {
-                printf("Player %d wins \n", 2);
-            }
-        }
-
-        //STATE FOR CLIENT
-        int first, last;
         if (state.attacker == 1) {
-            if (state.rally_count == 0) {
-                printf("[YOUR TURN TO SERVE].\n");
-                first = SERVE_UNDERHAND;
-                last = SERVE_JUMP;
-            } else {
-            printf("[YOUR TURN TO ATTACK].\n");
-            first = COUNTER_DEEP;
-            last = COUNTER_CUT;
-            }
+            // === YOU ARE ATTACKING ===
+            printf("[P2 - YOU ARE ATTACKING]\n");
+            my_input.player_id = 1;
+            
+            printf("Pick Skill (1-8): ");
+            scanf("%d", &my_input.skill_id);
+            printf("Aim Zone (1-6): ");
+            scanf("%d", &my_input.target_zone);
 
-            my_input.skill_id = ask_skill(first, last, state.last_skill[1]);
-            my_input.target_zone = ask_zone(my_input.skill_id);
-            my_input.guess_zone = 0;
-
-             // 3. Send Player 2 input back to Server
             n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
             if (n < 0) die_with_error("Error: send() Failed.");
-            printf("Move sent! Waiting for Player 1...\n");
-            
-        } else if (state.defender == 1) {
-            printf("[YOUR TURN TO DEFEND].\n");
-            printf("Opponent attacked! Guess zone to protect (1-6):\n");
-            my_input.guess_zone = read_int("Zone to protect", 1, 6);
-            my_input.skill_id = 0;
-            my_input.target_zone = 0;
 
-            if (send(client_sock, &my_input, sizeof(PlayerInput), 0) < 0) {
-                die_with_error("Error: send() Failed.");
-            }
-            printf("Defense choice sent! Waiting for server resolution...\n");
+            printf("Attack sent! Waiting for Player 1 to defend...\n");
+        } 
+        else {
+            // === YOU ARE DEFENDING ===
+            printf("[P2 - YOU ARE DEFENDING]\n");
+            printf("Player 1 is attacking.\n");
+            my_input.player_id = 1;
 
+            printf("Pick Zone to Protect (1-6): ");
+            scanf("%d", &my_input.guess_zone);
 
-        } else {
-            printf("Waiting for Player 1 to finish their turn...\n");
+            n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
+            if (n < 0) die_with_error("Error: send() Failed.");
+
+            printf("Defense choice sent! Waiting for turn result...\n");
         }
     }
     close(client_sock);
