@@ -5,6 +5,6 @@ Mintonette is a turn-based 2-player volleyball, text-based, terminal game. Minto
 Mintonette is a project of ABC for the Principles of Operating Systems Subject.
 
 DEVELOPERS:
-Baladia, John Benedict
-Fajardo, Arwen
+Baladia, John Benedict |
+Fajardo, Arwen |
 Querubin, Kirsten Gail
