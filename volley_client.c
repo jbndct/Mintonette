@@ -62,38 +62,57 @@ int main(int argc,  char *argv[]){
     PlayerInput my_input;
 
     while (true) {
-        // 1. Receive initial/updated state from server
         n = recv(client_sock, &state, sizeof(GameState), 0);
         if (n <= 0) {
             printf("Server disconnected.\n");
             break;
         }
 
-        printf("\n--- SCORES | P1: %d  P2: %d ---\n", state.scores[0], state.scores[1]);
-
         my_input.player_id = my_id;
 
-        // 2. Decide action based on whether my_id matches state.attacker
-        if (my_id == state.attacker) {
-            printf("[YOU ARE ATTACKING (Player %d)]\n", my_id + 1);
-            printf("Pick Skill (1-8): ");
-            scanf("%d", &my_input.skill_id);
-            printf("Aim Zone (1-6): ");
-            scanf("%d", &my_input.target_zone);
+        if (state.state_type == 1) {
+            // --- ATTACK PHASE ---
+            if (my_id == state.attacker) {
+                printf("\n--- SCORES | P1: %d  P2: %d ---\n", state.scores[0], state.scores[1]);
+                printf("[YOUR TURN TO ATTACK (Player %d)]\n", my_id + 1);
+                printf("Pick Skill (1-8): ");
+                scanf("%d", &my_input.skill_id);
+                printf("Aim Zone (1-6): ");
+                scanf("%d", &my_input.target_zone);
 
-            n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
-            if (n < 0) die_with_error("Error: send() Failed.");
-            printf("Attack sent! Waiting for opponent to defend...\n");
+                n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
+                if (n < 0) die_with_error("Error: send() Failed.");
+                printf("Attack sent! Waiting for opponent to defend...\n");
+            } else {
+                printf("\nWaiting for Player %d to attack...\n", state.attacker + 1);
+            }
         } 
-        else {
-            printf("[YOU ARE DEFENDING (Player %d)]\n", my_id + 1);
-            printf("Player %d is attacking.\n", state.attacker + 1);
-            printf("Pick Zone to Protect (1-6): ");
-            scanf("%d", &my_input.guess_zone);
+        else if (state.state_type == 2) {
+            // --- DEFENSE PHASE ---
+            if (my_id == state.defender) {
+                printf("\n[YOUR TURN TO DEFEND (Player %d)]\n", my_id + 1);
+                printf("Incoming Skill %d! \n", state.last_action_skill);
+                printf("Pick Zone to Protect (1-6): ");
+                scanf("%d", &my_input.guess_zone);
 
-            n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
-            if (n < 0) die_with_error("Error: send() Failed.");
-            printf("Defense choice sent! Waiting for turn result...\n");
+                n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
+                if (n < 0) die_with_error("Error: send() Failed.");
+                printf("Defense choice sent! Waiting for turn result...\n");
+            } else {
+                printf("Waiting for Player %d to defend...\n", state.defender + 1);
+            }
+        }
+        else if (state.state_type == 3) {
+            // --- TURN RESULT PHASE ---
+            printf("\n=== RALLY RESULT ===\n");
+            if (state.was_caught) {
+                printf("CAUGHT! The defender guessed correctly. Roles switch!\n");
+            } else {
+                printf("MISSED! Landed in zone %d.\n", state.landing_zone);
+                printf("Player %d wins the point!\n", state.point_winner + 1);
+            }
+            printf("CURRENT SCORES | Player 1: %d  Player 2: %d\n", state.scores[0], state.scores[1]);
+            printf("====================\n");
         }
     }
     close(client_sock);

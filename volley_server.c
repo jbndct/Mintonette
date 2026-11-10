@@ -68,48 +68,60 @@ int main(int argc, char *argv[]){
         send(client_socks[i], &state, sizeof(GameState), 0);
     }
 
-    while(true){
+    while (true) {
         printf("\n--- SCORES | P1: %d  P2: %d ---\n", state.scores[0], state.scores[1]);
-        printf("Waiting for Attacker (Player %d) to choose attack...\n", state.attacker + 1);
-
-        // Receive attack input from the attacking client socket
-        n = recv(client_socks[state.attacker], &atk_input, sizeof(PlayerInput), 0);
-        if (n <= 0) {
-            printf("Attacker disconnected.\n");
-            break;
+                
+        // --- PHASE 1: TELL BOTH CLIENTS IT'S ATTACK TIME ---
+        state.state_type = 1;
+        for (int i = 0; i < 2; i++) {
+            send(client_socks[i], &state, sizeof(GameState), 0);
         }
+                
+        printf("Waiting for Attacker (Player %d) to choose attack...\n", state.attacker + 1);
+        n = recv(client_socks[state.attacker], &atk_input, sizeof(PlayerInput), 0);
+        if (n <= 0) break;
+                
         printf("[P%d] Executed Skill %d aiming Zone %d\n", 
             state.attacker + 1, atk_input.skill_id, atk_input.target_zone);
+        
+        state.last_action_skill = atk_input.skill_id;
+        state.landing_zone = atk_input.target_zone;
+
+        // --- PHASE 2: TELL DEFENDER TO DEFEND ---
+        state.state_type = 2;
+        send(client_socks[state.defender], &state, sizeof(GameState), 0);
 
         printf("Waiting for Defender (Player %d) to choose defense...\n", state.defender + 1);
-
-        // Receive defense input from the defending client socket
         n = recv(client_socks[state.defender], &def_input, sizeof(PlayerInput), 0);
-        if (n <= 0) {
-            printf("Defender disconnected.\n");
-            break;
-        }
+        if (n <= 0) break;
+                
         printf("[P%d] Guessed Zone %d\n", state.defender + 1, def_input.guess_zone);
 
-        // Resolve turn logic
+        // --- PHASE 3: RESOLVE TURN & BROADCAST RESULT ---
+        state.state_type = 3;
         if (atk_input.target_zone == def_input.guess_zone) {
             printf("--> Caught! Roles switch.\n");
+            state.was_caught = 1;
+            state.point_winner = -1;
+
             int temp = state.attacker;
             state.attacker = state.defender;
             state.defender = temp;
         } else {
             printf("--> Point for Player %d!\n", state.attacker + 1);
+            state.was_caught = 0;
+            state.point_winner = state.attacker;
             state.scores[state.attacker]++;
         }
 
-        // Broadcast updated state to both clients
+        // Broadcast turn outcome to BOTH clients
         for (int i = 0; i < 2; i++) {
             send(client_socks[i], &state, sizeof(GameState), 0);
         }
     }
 
     printf("Closing connection ...\n");
-   close(client_socks[0]);
+    close(client_socks[0]);
     close(client_socks[1]);
     close(server_sock);
     
