@@ -4,6 +4,7 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
+// struct for move choices made by player
 typedef struct {
     int player_id;
     int skill_id;
@@ -11,6 +12,7 @@ typedef struct {
     int guess_zone;
 } PlayerInput;
 
+// struct for current game state, for synchonization
 typedef struct {
     int scores[2];
     int attacker;
