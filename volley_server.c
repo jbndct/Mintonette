@@ -6,8 +6,9 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include "protocol.h"
+#include "protocol.h" // references protocol.h header file
 
+// prints error messages
 void die_with_error(char *error_msg){
     printf("%s", error_msg);
     exit(-1);
@@ -19,6 +20,7 @@ int main(int argc, char *argv[]){
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_size;
 
+    // check if correct arguments are ran (./volley_server <Port>)
     if (argc < 2) {
         printf("Usage: %s port_no", argv[0]);
         exit(1);
@@ -38,12 +40,15 @@ int main(int argc, char *argv[]){
     server_addr.sin_addr.s_addr = INADDR_ANY; 
     server_addr.sin_port = htons(port_no); 
     
+    // bind socket to port number
     if (bind(server_sock, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) 
        die_with_error("Error: bind() Failed.");
-       
+    
+    // start listening to connections from 2 clients
     listen(server_sock, 2);
     printf("Server listening to port %d ...\n", port_no);
     
+    // accept two players, first is Player 1, then Player 2
     for (int i = 0; i < 2; i++) {
         printf("Waiting for Player %d to connect...\n", i + 1);
         client_size = sizeof(client_addr);
@@ -53,53 +58,62 @@ int main(int argc, char *argv[]){
         }
         printf("Player %d connected!\n", i + 1);
 
+        // send client their Player ID (0 for P1, 1 for P2) once they connect
         int player_id = i;
         send(client_socks[i], &player_id, sizeof(int), 0);
     }
 
+    // initialize game state with zeroes
     GameState state;
     memset(&state, 0, sizeof(GameState));
 
+    // default 
     PlayerInput atk_input, def_input;
     state.attacker = 0;
     state.defender = 1;
 
+    // send initial game state so clients know the game is starting
     for (int i = 0; i < 2; i++) {
         send(client_socks[i], &state, sizeof(GameState), 0);
     }
 
+    // main game loop
     while (true) {
         printf("\n--- SCORES | P1: %d  P2: %d ---\n", state.scores[0], state.scores[1]);
                 
-        // --- PHASE 1: TELL BOTH CLIENTS IT'S ATTACK TIME ---
+        // tells the clients that it is starting, attacker is prompted to attack
         state.state_type = 1;
         for (int i = 0; i < 2; i++) {
             send(client_socks[i], &state, sizeof(GameState), 0);
         }
-                
+        
+        // wait for input from attackier
         printf("Waiting for Attacker (Player %d) to choose attack...\n", state.attacker + 1);
         n = recv(client_socks[state.attacker], &atk_input, sizeof(PlayerInput), 0);
-        if (n <= 0) break;
+        if (n <= 0) break; // break if disconnected
                 
         printf("[P%d] Executed Skill %d aiming Zone %d\n", 
             state.attacker + 1, atk_input.skill_id, atk_input.target_zone);
         
+        // save attacker move details to game state
         state.last_action_skill = atk_input.skill_id;
         state.landing_zone = atk_input.target_zone;
 
-        // --- PHASE 2: TELL DEFENDER TO DEFEND ---
+        // tell defender to defend
         state.state_type = 2;
         send(client_socks[state.defender], &state, sizeof(GameState), 0);
 
+        // wait fto receive defense input from defender
         printf("Waiting for Defender (Player %d) to choose defense...\n", state.defender + 1);
         n = recv(client_socks[state.defender], &def_input, sizeof(PlayerInput), 0);
-        if (n <= 0) break;
+        if (n <= 0) break; // break if disconnected
                 
         printf("[P%d] Guessed Zone %d\n", state.defender + 1, def_input.guess_zone);
 
-        // --- PHASE 3: RESOLVE TURN & BROADCAST RESULT ---
+        // result checker, update score
         state.state_type = 3;
         if (atk_input.target_zone == def_input.guess_zone) {
+            // if correct guess, rally continues, swap attacker and defender
             printf("--> Caught! Roles switch.\n");
             state.was_caught = 1;
             state.point_winner = -1;
@@ -108,6 +122,7 @@ int main(int argc, char *argv[]){
             state.attacker = state.defender;
             state.defender = temp;
         } else {
+            // wrong guess, defender misses, attacker scores point
             printf("--> Point for Player %d!\n", state.attacker + 1);
             state.was_caught = 0;
             state.point_winner = state.attacker;
