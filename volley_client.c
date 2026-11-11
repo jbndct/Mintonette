@@ -7,8 +7,9 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include "protocol.h"
+#include "protocol.h" // references protocol.h header file
 
+// prints error messages
 void die_with_error(char *error_msg){
     printf("%s", error_msg);
     exit(-1);
@@ -127,10 +128,12 @@ void show_court(void)
 
 
 int main(int argc,  char *argv[]){
+    // variable for socket connection, port number, error tracker
     int client_sock,  port_no, n;
-    struct sockaddr_in server_addr;
+    struct sockaddr_in server_addr; 
     struct hostent *server;
 
+    // check if correct arguments are ran (./volley_client <IP> <Port>)
     if (argc < 3) {
         printf("Usage: %s hostname port_no",  argv[0]);
         exit(1);
@@ -143,7 +146,7 @@ int main(int argc,  char *argv[]){
     printf("\n\n\n\n");
 
     printf("Player 2 (client) starting ...\n");
-    // Create a socket using TCP
+    // create new TCP network socket
     client_sock = socket(AF_INET,  SOCK_STREAM,  0);
     if (client_sock < 0) 
         die_with_error("Error: socket() Failed.");
@@ -163,12 +166,14 @@ int main(int argc,  char *argv[]){
          
     server_addr.sin_port = htons(port_no);
 
+    // connect client to running server
     printf("Connecting to Player 1 at port %d...\n", port_no);
     if (connect(client_sock, (struct sockaddr *)&server_addr, sizeof server_addr) < 0)
         die_with_error("Error: connect() Failed.");
     printf("Connection successful! You are Player 2! \n");
 
     GameState state;
+    memset(&state, 0, sizeof(GameState));
     PlayerInput my_input;
     int game_over = 0;
 
@@ -179,6 +184,8 @@ int main(int argc,  char *argv[]){
             printf("Server disconnected.\n");
             break;
         }
+        // attached player id to the input
+        my_input.player_id = my_id;
 
         memset(&my_input, 0, sizeof(PlayerInput)); //clear memory for memory input for current turn
         my_input.player_id = 2; //turn the input to client (client is player 2 with player_id 1)
