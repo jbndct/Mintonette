@@ -9,43 +9,6 @@
 #include <stdbool.h>
 #include "protocol.h"
 
-
-typedef enum {
-    SERVE_UNDERHAND,
-    SERVE_SHORT,
-    SERVE_OVERHAND,
-    SERVE_JUMP,
-    COUNTER_DEEP,
-    COUNTER_DINK,
-    COUNTER_SPIKE,
-    COUNTER_CUT,
-    SKILL_COUNT
-} SkillId;
-
-typedef enum {
-    EXACT, 
-    NEIGHBOR
-} CatchRule;
-
-typedef struct {
-    const char *name;
-    int targets[MAX_TARGETS];
-    int target_count;
-    CatchRule catch_rule;
-    int fault_chance;
-} Skill;
-
-Skill skills[SKILL_COUNT] = {
-    {"Underhand Serve", {3,4}, 2, NEIGHBOR, 5},
-    {"Short Serve", {2,3}, 2, EXACT, 5},
-    {"Overhand Serve", {1,3,5}, 3, EXACT, 20},
-    {"Jump Serve", {1,3,4,6}, 4, EXACT, 30},
-    {"Deep Return", {1,3,4,6}, 4, NEIGHBOR, 5},
-    {"Dink", {1,2,3}, 3, EXACT, 20},
-    {"Spike", {2,4,5}, 3, EXACT, 25},
-    {"Cut Shot", {3,5,6}, 3, EXACT, 20}
-};
-
 void die_with_error(char *error_msg){
     printf("%s", error_msg);
     exit(-1);
@@ -172,6 +135,8 @@ int main(int argc,  char *argv[]){
         printf("Usage: %s hostname port_no",  argv[0]);
         exit(1);
     }
+    signal(SIGPIPE, SIG_IGN); // Ignore SIGPIPE to prevent crashes on broken connections
+    port_no = (argc>=3) ? atoi(argv[2]) : PORT; // Default port if not provided
 
     print_mintonette_text();
     print_mintonette_ball();
@@ -199,15 +164,15 @@ int main(int argc,  char *argv[]){
     server_addr.sin_port = htons(port_no);
 
     printf("Connecting to Player 1 at port %d...\n", port_no);
-    if (connect(client_sock, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) 
+    if (connect(client_sock, (struct sockaddr *)&server_addr, sizeof server_addr) < 0)
         die_with_error("Error: connect() Failed.");
-
     printf("Connection successful! You are Player 2! \n");
 
     GameState state;
     PlayerInput my_input;
+    int game_over = 0;
 
-    while (true) {
+    while (!game_over) {
         //RECEIVE FROM SERVER
         n = recv(client_sock, &state, sizeof(GameState), 0);
         if (n <= 0) {
@@ -218,6 +183,21 @@ int main(int argc,  char *argv[]){
         memset(&my_input, 0, sizeof(PlayerInput)); //clear memory for memory input for current turn
         my_input.player_id = 2; //turn the input to client (client is player 2 with player_id 1)
 
+
+
+        switch (state.state_type) {
+            case STATE_WAIT:
+                show_court();
+                print_scores(&state, CLIENT_ID);
+                if (state.attachker == SERVER_ID) {
+                    printf("Player 1 is attacking...\n");
+                } else {
+                    printf("Player 1 is choosing to defend...\n");
+                }
+                break;
+
+            case STATE_PICK_SKILL:    
+        }
         show_court();
         printf("\n--- SCORES | P1: %d  P2 (You): %d ---\n", state.scores[0], state.scores[1]);
         printf("Player 1 has taken their move.\n");
