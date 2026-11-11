@@ -29,6 +29,33 @@ void print_mintonette_ball()
     printf("                     '-._______.-'\n");
 }
 
+void print_skill_guide()
+{
+    printf("\n==================================================\n");
+    printf("                SKILL REFERENCE GUIDE             \n");
+    printf("==================================================\n");
+    printf("--- SERVE SKILLS (Opening Attack) ---\n");
+    printf("1. Underhand Serve | Fault:  5%% | Target: Zones 3, 4\n");
+    printf("   Hint: \"Free ball yan oh!\" (Forgiving defense)\n\n");
+    printf("2. Short Serve     | Fault:  5%% | Target: Zones 2, 3\n");
+    printf("   Hint: \"Yung unahan bantayan mo!\"\n\n");
+    printf("3. Overhand Serve  | Fault: 20%% | Target: Zones 1, 3, 5\n");
+    printf("   Hint: \"Handa… Awit! Sa gilid yan o gitna!\"\n\n");
+    printf("4. Jump Serve      | Fault: 30%% | Target: Zones 1, 3, 4, 6\n");
+    printf("   Hint: \"Bantayan niyo mga sulok!\" (High risk/reward)\n\n");
+
+    printf("--- COUNTER / ATTACK SKILLS (Rally Phase) ---\n");
+    printf("5. Deep Return     | Fault:  5%% | Target: Zones 1, 3, 4, 6\n");
+    printf("   Hint: \"Habol sa likod!\" (Forgiving defense)\n\n");
+    printf("6. Dink            | Fault: 20%% | Target: Zones 1, 2, 3\n");
+    printf("   Hint: \"Hulog sa unahan!\"\n\n");
+    printf("7. Spike           | Fault: 25%% | Target: Zones 2, 4, 5\n");
+    printf("   Hint: \"Aray mo!!! Spike sa mukha!\"\n\n");
+    printf("8. Cut Shot        | Fault: 20%% | Target: Zones 3, 5, 6\n");
+    printf("   Hint: \"Abang! Drop ball yan sa harap!\"\n");
+    printf("==================================================\n");
+}
+
 typedef enum
 {
     SERVE_UNDERHAND,
@@ -55,7 +82,7 @@ typedef struct
     int target_count;
     CatchRule catch_rule;
     int fault_chance;
-    const char *hint; // Added proper Tagalog hints
+    const char *hint;
 } Skill;
 
 Skill skills[SKILL_COUNT] = {
@@ -97,19 +124,6 @@ int read_int(const char *prompt, int min, int max)
         }
         printf("Invalid input. Enter a number between %d to %d: ", min, max);
     }
-}
-
-int zone_in_skill(SkillId id, int zone)
-{
-    int i;
-    for (i = 0; i < skills[id].target_count; i++)
-    {
-        if (skills[id].targets[i] == zone)
-        {
-            return 1;
-        }
-    }
-    return 0;
 }
 
 int is_caught(SkillId id, int landing, int guess)
@@ -191,26 +205,30 @@ int ask_skill(int first, int last, int banned)
 
 int ask_zone(SkillId id)
 {
-    int zone;
+    int choice;
 
     printf("\nChoose target zone:\n");
-    for (int i = 1; i <= 6; i++)
+    for (int j = 0; j < skills[id].target_count; j++)
     {
-        printf("[%d] Zone %d\n", i, i);
+        printf("[%d] Zone %d\n", j + 1, skills[id].targets[j]);
     }
 
-    while (1)
+    choice = read_int("Aim at option", 1, skills[id].target_count);
+    return skills[id].targets[choice - 1];
+}
+
+int ask_defense_zone(SkillId id)
+{
+    int choice;
+
+    printf("\nChoose a defensive zone to protect:\n");
+    for (int j = 0; j < skills[id].target_count; j++)
     {
-        zone = read_int("Aim at zone", 1, 6);
-        if (zone_in_skill(id, zone))
-        {
-            return zone;
-        }
-        else
-        {
-            printf("That skill can't reach Zone %d. Try a valid zone.\n", zone);
-        }
+        printf("[%d] Zone %d\n", j + 1, skills[id].targets[j]);
     }
+
+    choice = read_int("Protect option", 1, skills[id].target_count);
+    return skills[id].targets[choice - 1];
 }
 
 int main(void)
@@ -234,7 +252,10 @@ int main(void)
 
     print_mintonette_text();
     print_mintonette_ball();
-    printf("\n\n");
+    print_skill_guide();
+
+    printf("\nPress Enter to start the match...");
+    getchar();
 
     while ((scores[0] < 10) && (scores[1] < 10))
     {
@@ -248,7 +269,6 @@ int main(void)
 
         while (!rally_over)
         {
-            // Clear screen feel or separation line
             printf("================================\n");
             printf("         PLAYER %d TURN\n", attacker + 1);
             printf("================================\n");
@@ -303,13 +323,7 @@ int main(void)
             }
             printf("\n\n");
 
-            printf("Choose a defensive zone:\n");
-            for (int i = 1; i <= 6; i++)
-            {
-                printf("[%d] Zone %d\n", i, i);
-            }
-
-            guess = read_int("Your decision (Zone to protect)", 1, 6);
+            guess = ask_defense_zone(id);
             int caught = is_caught(id, landing, guess);
 
             if (caught)
@@ -341,11 +355,11 @@ int main(void)
     printf("\n==================================================\n");
     if (scores[0] == 10)
     {
-        printf("PLAYER 1 WINS THE VOLLEYBALL MATCH!\n");
+        printf("🏆 PLAYER 1 WINS THE VOLLEYBALL MATCH! 🏆\n");
     }
     else
     {
-        printf("PLAYER 2 WINS THE VOLLEYBALL MATCH!\n");
+        printf("🏆 PLAYER 2 WINS THE VOLLEYBALL MATCH! 🏆\n");
     }
     printf("==================================================\n");
 
