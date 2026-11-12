@@ -70,6 +70,7 @@ typedef struct {
     int scores[2];
     int attacker;
     int defender;
+    int server;
     int rally_count;
     int last_skill[2];
     
