@@ -177,11 +177,11 @@ int main(int argc,  char *argv[]){
     // create new TCP network socket
     client_sock = socket(AF_INET,  SOCK_STREAM,  0);
     if (client_sock < 0) 
-        die_with_error("Error: socket() Failed.");
+        die_with_error("Error: socket() Failed.\n");
 
     server = gethostbyname(argv[1]);
     if (server == NULL) {
-        die_with_error("Error: No such host.");
+        die_with_error("Error: No such host.\n");
     }
     
     //CONNECTION TO SERVER
@@ -217,7 +217,7 @@ int main(int argc,  char *argv[]){
 
         switch (state.state_type) {
             case STATE_WAIT: {
-                print_scoreboard(state.scores, state.attacker-1);
+                print_scoreboard(state.scores, state.server-1);
                 show_court();
                 printf("You are Player %d.\n", state.player_id);
                 if (state.attacker == state.player_id) {
@@ -230,7 +230,7 @@ int main(int argc,  char *argv[]){
 
             case STATE_PICK_SKILL: {
                 int first, last;
-                print_scoreboard(state.scores, state.attacker-1);
+                print_scoreboard(state.scores, state.server-1);
                 show_court();
                 if (state.rally_count == 0) {
                         printf("[YOUR TURN TO SERVE].\n");
@@ -255,7 +255,7 @@ int main(int argc,  char *argv[]){
 
             case STATE_PICK_DEFENSE: {
                 SkillId used = state.last_action_skill;
-                print_scoreboard(state.scores, state.attacker-1);
+                print_scoreboard(state.scores, state.server-1);
                 show_court();
 
 
@@ -295,12 +295,12 @@ int main(int argc,  char *argv[]){
                 if (state.point_winner != 0) {
                     printf("\nPlayer %d wins the point!\n", state.point_winner);
                 }
-                print_scoreboard(state.scores, state.attacker - 1);
+                print_scoreboard(state.scores, state.server-1);
                 break;
             }
 
             case STATE_GAME_OVER:{
-                print_scoreboard(state.scores, state.attacker - 1);
+                print_scoreboard(state.scores, state.server - 1);
                 printf("\n==================================================\n");
                 printf("🏆 PLAYER %d WINS THE VOLLEYBALL MATCH! 🏆\n", state.point_winner);
                 if (state.point_winner == state.player_id) {
