@@ -213,7 +213,29 @@ int main(int argc,  char *argv[]){
                 break;
 
             case STATE_PICK_SKILL: 
-            
+                int first, last;
+                print_scoreboard(state.scores, state.attacker-1);
+                show_court();
+                if (state.rally_count == 0) {
+                        printf("[YOUR TURN TO SERVE].\n");
+                        first = SERVE_UNDERHAND;
+                        last = SERVE_JUMP;
+                } else {
+                        printf("[YOUR TURN TO ATTACK].\n");
+                        first = COUNTER_DEEP;
+                        last = COUNTER_CUT;
+                }
+
+            my_input.skill_id = ask_skill(first, last, state.last_skill[state.player_id-1]);
+            my_input.target_zone = ask_zone(my_input.skill_id);
+            my_input.guess_zone = 0;
+
+             //Send PlayerInput back to Server
+            n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
+            if (n < 0) die_with_error("Error: send() Failed.");
+            printf("Move sent! Waiting for server...\n");
+            break;
+
             case STATE_PICK_DEFENSE:
             
             case STATE_RESULT:
@@ -243,27 +265,7 @@ int main(int argc,  char *argv[]){
 //             }
 //         }
 
-//         //STATE FOR CLIENT
-//         int first, last;
-//         if (state.attacker == 1) {
-//             if (state.rally_count == 0) {
-//                 printf("[YOUR TURN TO SERVE].\n");
-//                 first = SERVE_UNDERHAND;
-//                 last = SERVE_JUMP;
-//             } else {
-//             printf("[YOUR TURN TO ATTACK].\n");
-//             first = COUNTER_DEEP;
-//             last = COUNTER_CUT;
-//             }
-
-//             my_input.skill_id = ask_skill(first, last, state.last_skill[1]);
-//             my_input.target_zone = ask_zone(my_input.skill_id);
-//             my_input.guess_zone = 0;
-
-//              // 3. Send Player 2 input back to Server
-//             n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
-//             if (n < 0) die_with_error("Error: send() Failed.");
-//             printf("Move sent! Waiting for Player 1...\n");
+//        
             
 //         } else if (state.defender == 1) {
 //             printf("[YOUR TURN TO DEFEND].\n");
