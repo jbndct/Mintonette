@@ -63,23 +63,6 @@ int main(int argc, char *argv[]){
         printf("Player %d connected!\n", i + 1);
     }
 
-    // initialize game state with zeroes, tell which player is which
-    GameState state;
-    memset(&state, 0, sizeof(GameState));
-    state.attacker = 1;
-    state.defender = 2;
-    state.rally_count = 0;
-    state.last_skill[0] = -1; //no skill used yet
-    state.last_skill[1] = -1;
-
-    for (int i = 0; i < 2; i++) {
-        state.player_id = i + 1;
-        state.state_type = (i==0) ? STATE_PICK_SKILL : STATE_WAIT;
-        send(client_socks[i], &state, sizeof(GameState), 0);
-    }
-    printf("Both players connected. States sent.\n");
-
-
     srand((unsigned)time(NULL));//seed once (fault rolls)
  
     GameState state;
@@ -112,7 +95,7 @@ int main(int argc, char *argv[]){
             }
  
             n = recv(client_socks[a], &atk_in, sizeof(PlayerInput), 0);
-            if (n <= 0) {                                  // CHANGED: was goto done
+            if (n <= 0) {                                 
                 printf("Player %d disconnected.\n", a + 1);
                 quit = 1;
                 break;
