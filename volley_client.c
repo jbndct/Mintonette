@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -222,7 +222,7 @@ int main(int argc,  char *argv[]){
                 if (state.attacker == state.player_id) {
                     printf("Waiting for the server...\n");
                 } else {
-                    printf("Player 1 is attacking...\n");
+                    printf("Player %d is attacking...\n", state.attacker);
                 }
                 break;
             }
@@ -289,13 +289,13 @@ int main(int argc,  char *argv[]){
                     printf("\n>>> CAUGHT! Player %d successfully returned the ball! <<<\n\n", state.defender);
                 } else {
                     printf("\n>>> MISSED! It landed in Zone %d. Player %d wins the point! <<<\n", state.landing_zone, state.attacker);
-            }
+                }
 
-            if (state.point_winner != 0) {
-                printf("\nPlayer %d wins the point!\n", state.point_winner);
-            }
-            print_scoreboard(state.scores, state.attacker - 1);
-            break;
+                if (state.point_winner != 0) {
+                    printf("\nPlayer %d wins the point!\n", state.point_winner);
+                }
+                print_scoreboard(state.scores, state.attacker - 1);
+                break;
             }
 
             case STATE_GAME_OVER:{
