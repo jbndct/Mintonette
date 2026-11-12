@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <strings.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <time.h>
 #include "protocol.h" // references protocol.h header file
 
 // prints error messages
@@ -79,49 +79,129 @@ int main(int argc, char *argv[]){
     }
     printf("Both players connected. States sent.\n");
 
-    PlayerInput p1_input;
-    n = recv(client_socks[0], &p1_input, sizeof(PlayerInput), 0);
-    if (n <= 0 || p1_input.skill_id < 0 || p1_input.skill_id >= SKILL_COUNT) {
-        printf("Missing input from Player 1.\n");
-        return 1;
-    }
 
-    int id = p1_input.skill_id;
-    printf("Player %d used: %s\n", state.attacker, skills[id].name);
-    printf("Landing Zone: %d\n", p1_input.target_zone);
+    srand((unsigned)time(NULL));//seed once (fault rolls)
+ 
+    GameState state;
+    bzero(&state, sizeof(GameState));          
+    state.server = 1;                            //P1 serves first by default
+    PlayerInput atk_in, def_in;                  
+    int quit = 0;                                //allow players to quit if one disconnects
 
-    state.last_action_skill = id;
-    for (int i = 0; i < 2; i++) {
-        state.player_id = i + 1;
-        state.state_type = (i == 1) ? STATE_PICK_DEFENSE : STATE_WAIT;
-        send(client_socks[i], &state, sizeof(GameState), 0);
-    }
-
-    PlayerInput p2_input;                                   // NEW
-    n = recv(client_socks[1], &p2_input, sizeof(PlayerInput), 0);   // NEW
-        if (n > 0) {
-            printf("[P2] guess_zone=%d\n", p2_input.guess_zone);
-
-            state.landing_zone = p1_input.target_zone;
-            state.defender_guess = p2_input.guess_zone;
-            state.fault_occurred = 0;     // TEMP: set to 1 to test the fault message
-            state.was_caught = (state.landing_zone == state.defender_guess);
-
-            if (state.fault_occurred)  state.point_winner = state.defender;
-            else if (state.was_caught) state.point_winner = 0;
-            else                       state.point_winner = state.attacker;
-
-            if (state.point_winner != 0)
-            state.scores[state.point_winner - 1]++;
-
+    while (!quit && state.scores[0] < WIN_SCORE && state.scores[1] < WIN_SCORE) {   
+        state.attacker = state.server;
+        state.defender = 3 - state.server;
+        state.rally_count = 0;
+        state.last_skill[0] = -1;
+        state.last_skill[1] = -1;
+        state.point_winner = 0;
+        int rally_over = 0;
+ 
+        while (!rally_over && !quit) {           
+            int a = state.attacker - 1;          
+            int d = state.defender - 1;          
+            int swap_roles = 0;
+ 
+            // 1. ATTACKER, defender waits
+            state.was_caught = 0;
+            state.fault_occurred = 0;
             for (int i = 0; i < 2; i++) {
-            state.player_id = i + 1;
-            state.state_type = STATE_RESULT;
-            send(client_socks[i], &state, sizeof(GameState), 0);
+                state.player_id = i + 1;
+                state.state_type = (i == a) ? STATE_PICK_SKILL : STATE_WAIT;
+                send(client_socks[i], &state, sizeof(GameState), 0);
+            }
+ 
+            n = recv(client_socks[a], &atk_in, sizeof(PlayerInput), 0);
+            if (n <= 0) {                                  // CHANGED: was goto done
+                printf("Player %d disconnected.\n", a + 1);
+                quit = 1;
+                break;
+            }
+ 
+            //to check if the input was valid, if not, quit the game and notify the other player
+            int id = atk_in.skill_id;
+            int first = (state.rally_count == 0) ? SERVE_UNDERHAND : COUNTER_DEEP;
+            int last  = (state.rally_count == 0) ? SERVE_JUMP : COUNTER_CUT;
+            int zone_ok = 0;
+            if (id >= first && id <= last)
+                for (int j = 0; j < skills[id].target_count; j++)
+                    if (skills[id].targets[j] == atk_in.target_zone) zone_ok = 1;
+            if (!zone_ok || id == state.last_skill[a]) {
+                printf("Invalid input from Player %d.\n", a + 1);
+                quit = 1;                                  
+                break;
+            }
+ 
+            state.last_skill[a] = id;
+            state.last_action_skill = id;
+            printf("Player %d used: %s (landing %d)\n", a + 1, skills[id].name, atk_in.target_zone);
+ 
+            // 2. for determining fault chance based on the skill 
+            if (rand() % 100 + 1 <= skills[id].fault_chance) {
+                state.fault_occurred = 1;
+                state.point_winner = state.defender;
+                rally_over = 1;
+            } else {
+                // 3. DEFENDER, attacker waits
+                for (int i = 0; i < 2; i++) {
+                    state.player_id = i + 1;
+                    state.state_type = (i == d) ? STATE_PICK_DEFENSE : STATE_WAIT;
+                    send(client_socks[i], &state, sizeof(GameState), 0);
+                }
+                n = recv(client_socks[d], &def_in, sizeof(PlayerInput), 0);
+                if (n <= 0) {                              
+                    printf("Player %d disconnected.\n", d + 1);
+                    quit = 1;
+                    break;
+                }
+ 
+                // 4. if CAUGHT/MISSED
+                int landing = atk_in.target_zone;
+                int guess = def_in.guess_zone;
+                int caught = (landing == guess);
+                if (!caught && skills[id].catch_rule == NEIGHBOR && guess >= 1 && guess <= 6) {
+                    int row_gap = abs((guess - 1) / 3 - (landing - 1) / 3);
+                    int col_gap = abs((guess - 1) % 3 - (landing - 1) % 3);
+                    if (row_gap + col_gap == 1) caught = 1;
+                }
+ 
+                state.landing_zone = landing;
+                state.defender_guess = guess;
+                state.was_caught = caught;
+ 
+                if (caught) {
+                    swap_roles = 1;              // take turns AFTER the result is sent, 
+                } else {
+                    state.point_winner = state.attacker;
+                    rally_over = 1;
+                }
+            }
+ 
+            // 5. score, update server, send result to both
+            if (state.point_winner != 0) {
+                state.scores[state.point_winner - 1]++;
+                state.server = state.point_winner;   // point winner serves next
+            }
+ 
+            for (int i = 0; i < 2; i++) {
+                state.player_id = i + 1;
+                state.state_type = STATE_RESULT;
+                send(client_socks[i], &state, sizeof(GameState), 0);
+            }
+ 
+            // 6. For rally
+            if (swap_roles) {
+                int t = state.attacker;
+                state.attacker = state.defender;
+                state.defender = t;
+                state.rally_count++;
+            }
         }
-
-        state.scores[0] = WIN_SCORE;
-        state.point_winner = 1;
+    }
+ 
+    // for ending game
+    if (!quit) {                                           
+        state.point_winner = (state.scores[0] >= WIN_SCORE) ? 1 : 2;
         for (int i = 0; i < 2; i++) {
             state.player_id = i + 1;
             state.state_type = STATE_GAME_OVER;

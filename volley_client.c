@@ -212,7 +212,7 @@ int main(int argc,  char *argv[]){
             break;
         }
 
-        memset(&my_input, 0, sizeof(PlayerInput)); //clear memory for memory input for current turn
+        bzero(&my_input, sizeof(PlayerInput)); //clear memory for memory input for current turn
         my_input.player_id = state.player_id; //turn the input to client (client is player 2 with player_id 1)
 
         switch (state.state_type) {
@@ -300,7 +300,7 @@ int main(int argc,  char *argv[]){
             }
 
             case STATE_GAME_OVER:{
-                print_scoreboard(state.scores, state.server - 1);
+                print_scoreboard(state.scores, state.server-1);
                 printf("\n==================================================\n");
                 printf("🏆 PLAYER %d WINS THE VOLLEYBALL MATCH! 🏆\n", state.point_winner);
                 if (state.point_winner == state.player_id) {
