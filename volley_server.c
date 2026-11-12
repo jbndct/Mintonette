@@ -80,17 +80,28 @@ int main(int argc, char *argv[]){
 
     PlayerInput p1_input;
     n = recv(client_socks[0], &p1_input, sizeof(PlayerInput), 0);
-    if (n > 0 && p1_input.skill_id >= 0 && p1_input.skill_id < SKILL_COUNT) {
-        int id = p1_input.skill_id;
-        printf("Player %d used: %s\n", state.attacker, skills[id].name);
-        printf("Incoming Target Zones:");
+    if (n > 0 || p1_input.skill_id < 0 || p1_input.skill_id >= SKILL_COUNT) {
+        printf("Missing input from Player 1.\n");
+        return 1;
+    }
 
-        for (int j = 0; j < skills[id].target_count; j++)
-            printf(" Zone %d", skills[id].targets[j]);
-        printf("\n");
-        printf("Landing Zone: %d\n", p1_input.target_zone);
+    int id = p1_input.skill_id;
+    printf("Player %d used: %s\n", state.attacker, skills[id].name);
+    printf("Landing Zone: %d\n", p1_input.target_zone);
+
+    state.last_action_skill = id; 
+    for (int i = 0; i < 2; i++) {
+        state.player_id = i + 1;
+        state.state_type = (i == 1) ? STATE_PICK_DEFENSE : STATE_WAIT;
+        end(client_socks[i], &state, sizeof(GameState), 0);
     }
     
+    PlayerInput p2_input;
+    n = recv(client_socks[1], &p2_input, sizeof(PlayerInput), 0);
+    if (n > 0) {
+        printf("[P2] guess_zone=%d\n", p2_input.guess_zone);
+    }
+
     printf("Closing connection ...\n");
     close(client_socks[0]);
     close(client_socks[1]);
