@@ -117,6 +117,14 @@ int main(int argc, char *argv[]){
         state.state_type = STATE_RESULT;
         send(client_socks[i], &state, sizeof(GameState), 0);
     }
+
+    state.scores[0] = WIN_SCORE;     // TEMP: pretend Player 1 reached 10
+    state.point_winner = 1;
+        for (int i = 0; i < 2; i++) {
+            state.player_id = i + 1;
+            state.state_type = STATE_GAME_OVER;
+            send(client_socks[i], &state, sizeof(GameState), 0);
+        }
     }
 
     printf("Closing connection ...\n");
