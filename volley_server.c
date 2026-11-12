@@ -68,7 +68,6 @@ int main(int argc, char *argv[]){
     state.attacker = 1;
     state.defender = 2;
     state.rally_count = 0;
-    state.rally_count = 0;
     state.last_skill[0] = -1; //no skill used yet
     state.last_skill[1] = -1;
 
@@ -99,9 +98,34 @@ int main(int argc, char *argv[]){
 
     PlayerInput p2_input;                                   // NEW
     n = recv(client_socks[1], &p2_input, sizeof(PlayerInput), 0);   // NEW
-    if (n > 0) {
-        printf("[P2] guess_zone=%d\n", p2_input.guess_zone);
-        /* ...the rest of your if-block stays exactly as it is... */
+        if (n > 0) {
+            printf("[P2] guess_zone=%d\n", p2_input.guess_zone);
+
+            state.landing_zone = p1_input.target_zone;
+            state.defender_guess = p2_input.guess_zone;
+            state.fault_occurred = 0;     // TEMP: set to 1 to test the fault message
+            state.was_caught = (state.landing_zone == state.defender_guess);
+
+            if (state.fault_occurred)  state.point_winner = state.defender;
+            else if (state.was_caught) state.point_winner = 0;
+            else                       state.point_winner = state.attacker;
+
+            if (state.point_winner != 0)
+            state.scores[state.point_winner - 1]++;
+
+            for (int i = 0; i < 2; i++) {
+            state.player_id = i + 1;
+            state.state_type = STATE_RESULT;
+            send(client_socks[i], &state, sizeof(GameState), 0);
+        }
+
+        state.scores[0] = WIN_SCORE;
+        state.point_winner = 1;
+        for (int i = 0; i < 2; i++) {
+            state.player_id = i + 1;
+            state.state_type = STATE_GAME_OVER;
+            send(client_socks[i], &state, sizeof(GameState), 0);
+        }
     }
 
     printf("Closing connection ...\n");
