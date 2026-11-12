@@ -273,7 +273,7 @@ int main(int argc,  char *argv[]){
                 
                 my_input.guess_zone = ask_defense_zone(used);
 
-                n = send(client_sock, &my_input, sizeof(PlayerInput), 0) 
+                n = send(client_sock, &my_input, sizeof(PlayerInput), 0); 
                 if (n < 0) die_with_error("Error: send() Failed.\n");
                 printf("Defense sent. Waiting for server...\n");
                 break;
@@ -316,32 +316,3 @@ int main(int argc,  char *argv[]){
     close (client_sock);
     return 0;
 }
-
-
-// show_court();
-//         printf("\n--- SCORES | P1: %d  P2 (You): %d ---\n", state.scores[0], state.scores[1]);
-//         printf("Player 1 has taken their move.\n");
-
-//         //IF GAME OVER
-//         if ((state.scores[0] < 10) && (state.scores[1] < 10)){
-//             if (state.scores[0] == 10) {
-//                 printf("Player %d wins \n", 1);
-//             }
-//             else if (state.scores[1] == 10) {
-//                 printf("Player %d wins \n", 2);
-//             }
-//         }
-
-//        
-            
-//         } else if (state.defender == 1) {
-//             
-//             }
-//             printf("Defense choice sent! Waiting for server resolution...\n");
-
-
-//         } else {
-//             printf("Waiting for Player 1 to finish their turn...\n");
-//         }
-//     }
-//     close(client_sock);
