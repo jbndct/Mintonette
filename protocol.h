@@ -22,14 +22,6 @@ typedef enum
     SKILL_COUNT
 } SkillId;
 
-// struct for move choices made by player
-typedef struct {
-    int player_id;
-    int skill_id;
-    int target_zone;
-    int guess_zone;
-} PlayerInput;
-
 typedef enum
 {
     EXACT,
