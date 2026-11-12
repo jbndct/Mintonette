@@ -78,7 +78,7 @@ typedef struct {
     int landing_zone;
     int defender_guess;
     int was_caught;
-    int fault_occured;
+    int fault_occurred;
     int point_winner;
 } GameState;
 
