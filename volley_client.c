@@ -94,6 +94,20 @@ int ask_zone(SkillId id) {
 
 }
 
+int ask_defense_zone(SkillId id)
+{
+    int choice;
+
+    printf("\nChoose a defensive zone to protect:\n");
+    for (int j = 0; j < skills[id].target_count; j++)
+    {
+        printf("[%d] Zone %d\n", j + 1, skills[id].targets[j]);
+    }
+
+    choice = read_int("Protect option", 1, skills[id].target_count);
+    return skills[id].targets[choice - 1];
+}
+
 //DISPLAY
 void print_mintonette_text() {
     printf(" __  __ ___ _   _ _____ ___  _   _ _____ _____ _____ _____ \n");
@@ -201,7 +215,7 @@ int main(int argc,  char *argv[]){
         my_input.player_id = state.player_id; //turn the input to client (client is player 2 with player_id 1)
 
         switch (state.state_type) {
-            case STATE_WAIT:
+            case STATE_WAIT: {
                 print_scoreboard(state.scores, state.attacker-1);
                 show_court();
                 printf("You are Player %d.\n", state.player_id);
@@ -211,8 +225,9 @@ int main(int argc,  char *argv[]){
                     printf("Player 1 is attacking...\n");
                 }
                 break;
+            }
 
-            case STATE_PICK_SKILL: 
+            case STATE_PICK_SKILL: {
                 int first, last;
                 print_scoreboard(state.scores, state.attacker-1);
                 show_court();
@@ -226,18 +241,44 @@ int main(int argc,  char *argv[]){
                         last = COUNTER_CUT;
                 }
 
-            my_input.skill_id = ask_skill(first, last, state.last_skill[state.player_id-1]);
-            my_input.target_zone = ask_zone(my_input.skill_id);
-            my_input.guess_zone = 0;
+                my_input.skill_id = ask_skill(first, last, state.last_skill[state.player_id-1]);
+                my_input.target_zone = ask_zone(my_input.skill_id);
+                my_input.guess_zone = 0;
 
-             //Send PlayerInput back to Server
-            n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
-            if (n < 0) die_with_error("Error: send() Failed.");
-            printf("Move sent! Waiting for server...\n");
-            break;
+                //Send PlayerInput back to Server
+                n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
+                if (n < 0) die_with_error("Error: send() Failed.");
+                printf("Move sent! Waiting for server...\n");
+                break;
+            }
 
-            case STATE_PICK_DEFENSE:
-            
+            case STATE_PICK_DEFENSE: {
+                SkillId used = state.last_action_skill;
+                print_scoreboard(state.scores, state.attacker-1);
+                show_court();
+
+
+                printf("[YOUR TURN TO DEFEND].\n");
+                // Display Tagalog Hint
+                printf("\"%s\"\n\n", skills[used].hint);
+                printf("Player %d used: %s\n", state.attacker, skills[used].name);
+
+                // Show targets for information context
+                printf("Incoming Target Zones:");
+                for (int j = 0; j < skills[used].target_count; j++)
+                {
+                    printf(" Zone %d", skills[used].targets[j]);
+                }
+                printf("\n\n");
+                
+                my_input.guess_zone = ask_defense_zone(used);
+
+                n = send(client_sock, &my_input, sizeof(PlayerInput), 0) 
+                if (n < 0) die_with_error("Error: send() Failed.\n");
+                printf("Defense sent. Waiting for server...\n");
+                break;
+            }
+
             case STATE_RESULT:
             
             case STATE_GAME_OVER:
@@ -268,14 +309,7 @@ int main(int argc,  char *argv[]){
 //        
             
 //         } else if (state.defender == 1) {
-//             printf("[YOUR TURN TO DEFEND].\n");
-//             printf("Opponent attacked! Guess zone to protect (1-6):\n");
-//             my_input.guess_zone = read_int("Zone to protect", 1, 6);
-//             my_input.skill_id = 0;
-//             my_input.target_zone = 0;
-
-//             if (send(client_sock, &my_input, sizeof(PlayerInput), 0) < 0) {
-//                 die_with_error("Error: send() Failed.");
+//             
 //             }
 //             printf("Defense choice sent! Waiting for server resolution...\n");
 
