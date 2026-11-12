@@ -96,10 +96,27 @@ int main(int argc, char *argv[]){
         end(client_socks[i], &state, sizeof(GameState), 0);
     }
     
-    PlayerInput p2_input;
-    n = recv(client_socks[1], &p2_input, sizeof(PlayerInput), 0);
     if (n > 0) {
-        printf("[P2] guess_zone=%d\n", p2_input.guess_zone);
+    printf("[P2] guess_zone=%d\n", p2_input.guess_zone);
+
+    // TEMP: fake resolution (real logic comes in Steps 8-11)
+    state.landing_zone = p1_input.target_zone;
+    state.defender_guess = p2_input.guess_zone;
+    state.fault_occurred = 0;                 // TEMP: change to 1 to test the fault message
+    state.was_caught = (state.landing_zone == state.defender_guess);
+
+    if (state.fault_occurred)  state.point_winner = state.defender;
+    else if (state.was_caught) state.point_winner = 0;
+    else                       state.point_winner = state.attacker;
+
+    if (state.point_winner != 0)
+        state.scores[state.point_winner - 1]++;
+
+    for (int i = 0; i < 2; i++) {
+        state.player_id = i + 1;
+        state.state_type = STATE_RESULT;
+        send(client_socks[i], &state, sizeof(GameState), 0);
+    }
     }
 
     printf("Closing connection ...\n");
