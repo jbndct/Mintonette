@@ -279,7 +279,24 @@ int main(int argc,  char *argv[]){
                 break;
             }
 
-            case STATE_RESULT:
+            case STATE_RESULT: {
+                SkillId used = state.last_action_skill;
+
+                if (state.fault_occurred) {
+                    printf("\n>>> FAULT! Player %d messed up their execution (%s)! <<<\n",
+                    state.attacker, skills[used].name);
+                } else if (state.was_caught) {
+                    printf("\n>>> CAUGHT! Player %d successfully returned the ball! <<<\n\n", state.defender);
+                } else {
+                    printf("\n>>> MISSED! It landed in Zone %d. Player %d wins the point! <<<\n", state.landing_zone, state.attacker);
+            }
+
+            if (state.point_winner != 0) {
+                printf("\nPlayer %d wins the point!\n", state.point_winner);
+            }
+            print_scoreboard(state.scores, state.attacker - 1);
+            break;
+            }
             
             case STATE_GAME_OVER:
 
