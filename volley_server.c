@@ -65,13 +65,32 @@ int main(int argc, char *argv[]){
     // initialize game state with zeroes, tell which player is which
     GameState state;
     memset(&state, 0, sizeof(GameState));
-    state.state_type = STATE_WAIT;
+    state.attacker = 1;
+    state.defender = 2;
+    state_rally_count = 0;
+    state.last_skill[0] = -1; //no skill used yet
+    state.last_skill[1] = -1;
+
     for (int i = 0; i < 2; i++) {
         state.player_id = i + 1;
+        state.state_type = (i==0) ? STATE_PICK_SKILL : STATE_WAIT;
         send(client_socks[i], &state, sizeof(GameState), 0);
     }
     printf("Both players connected. IDs sent.\n");
 
+    PlayerInput p1_input;
+    n = recv(client_socks[0], &p1_input, sizeof(PlayerInput), 0);
+    if (n > 0 && p1_input.skill_id >= 0 && p1_input.skill_id < SKILL_COUNT) {
+        int id = p1_input.skill_id;
+        printf("Player %d used: %s\n", state.attacker, skills[id].name);
+        printf("Incoming Target Zones:");
+
+        for (int j = 0; j < skills[id].target_count; j++)
+            printf(" Zone %d", skills[id].targets[j]);
+        printf("\n");
+        printf("Landing Zone: %d\n", p1_input.target_zone);
+    }
+    
     printf("Closing connection ...\n");
     close(client_socks[0]);
     close(client_socks[1]);
