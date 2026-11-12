@@ -297,11 +297,20 @@ int main(int argc,  char *argv[]){
             print_scoreboard(state.scores, state.attacker - 1);
             break;
             }
-            
-            case STATE_GAME_OVER:
 
-
-
+            case STATE_GAME_OVER:{
+                print_scoreboard(state.scores, state.attacker - 1);
+                printf("\n==================================================\n");
+                printf("🏆 PLAYER %d WINS THE VOLLEYBALL MATCH! 🏆\n", state.point_winner);
+                if (state.point_winner == state.player_id) {
+                    printf("You won!\n");
+                } else {
+                    printf("You lost. Better luck next time!\n");
+                }
+                printf("==================================================\n");
+                game_over = 1;      // exits the while loop
+                break;
+            }
         }
     }    
     close (client_sock);
