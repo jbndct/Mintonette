@@ -15,6 +15,42 @@ void die_with_error(char *error_msg){
     exit(-1);
 }
 
+
+int roll_percent(void)
+{
+    return rand() % 100 + 1;
+}
+
+int fault(int fault_chance)
+{
+    int roll = roll_percent();
+    return (roll <= fault_chance) ? 1 : 0;
+}
+
+int is_caught(SkillId id, int landing, int guess)
+{
+    if (landing == guess)
+    {
+        return 1;
+    }
+    else if (skills[id].catch_rule == NEIGHBOR)
+    {
+        int row_a = (guess - 1) / 3;
+        int col_a = (guess - 1) % 3;
+        int row_b = (landing - 1) / 3;
+        int col_b = (landing - 1) % 3;
+
+        int row_gap = abs(row_a - row_b);
+        int col_gap = abs(col_a - col_b);
+
+        if (row_gap + col_gap == 1)
+        {
+            return 1; /* side by side or front/back */
+        }
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[]){
     int server_sock, port_no, n;
     int client_socks[2];
