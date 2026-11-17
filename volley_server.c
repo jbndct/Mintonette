@@ -156,7 +156,7 @@ int main(int argc, char *argv[]){
             printf("Player %d used: %s (landing %d)\n", a + 1, skills[id].name, atk_in.target_zone);
  
             // 2. for determining fault chance based on the skill 
-            if (rand() % 100 + 1 <= skills[id].fault_chance) {
+            if (fault(skills[id].fault_chance)) {
                 state.fault_occurred = 1;
                 state.point_winner = state.defender;
                 rally_over = 1;
@@ -173,16 +173,22 @@ int main(int argc, char *argv[]){
                     quit = 1;
                     break;
                 }
+
+
+                //validate the guess
+                int guess_ok = 0;
+                for (int j = 0; j < skills[id].target_count; j++)
+                    if (skills[id].targets[j] == def_in.guess_zone) guess_ok = 1;
+                if (!guess_ok) {
+                    printf("Invalid input from Player %d.\n", d + 1);
+                    quit = 1;
+                    break;
+                }
  
                 // 4. if CAUGHT/MISSED
                 int landing = atk_in.target_zone;
                 int guess = def_in.guess_zone;
-                int caught = (landing == guess);
-                if (!caught && skills[id].catch_rule == NEIGHBOR && guess >= 1 && guess <= 6) {
-                    int row_gap = abs((guess - 1) / 3 - (landing - 1) / 3);
-                    int col_gap = abs((guess - 1) % 3 - (landing - 1) % 3);
-                    if (row_gap + col_gap == 1) caught = 1;
-                }
+                int caught = is_caught(id, landing, guess);
  
                 state.landing_zone = landing;
                 state.defender_guess = guess;
