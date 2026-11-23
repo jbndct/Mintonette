@@ -11,88 +11,93 @@
 #include "protocol.h" // references protocol.h header file
 
 // prints error messages
-void die_with_error(char *error_msg){
+void die_with_error(char *error_msg)
+{
     printf("%s", error_msg);
     exit(-1);
 }
 
-//READ INPUT
-int read_int (const char *prompt, int min, int max) {
+// READ INPUT
+int read_int(const char *prompt, int min, int max)
+{
     char line[64];
     int value;
     printf("%s: ", prompt);
-    while(1) {
-        if (fgets(line, sizeof(line), stdin) == NULL) {
-            printf("\n No more input. \n");
+    while (1)
+    {
+        if (fgets(line, sizeof(line), stdin) == NULL)
+        {
+            printf("\nNo more input.\n");
             exit(1);
         }
 
-        if(sscanf(line, "%d", &value) == 1 && value >= min && value <= max) {
+        if (sscanf(line, "%d", &value) == 1 && value >= min && value <= max)
+        {
             return value;
         }
 
-        printf("Invalid, enter a number between %d to %d: ", min, max);
+        printf("Invalid input. Enter a number between %d to %d: ", min, max);
     }
-    
 }
 
-//ASK SKILLS
+// ASK SKILLS
 int ask_skill(int first, int last, int banned)
 {
     int i;
     int choice;
     int id;
 
-    for (i = first; i <= last; i++) {
-        printf("%d. %s", i - first + 1, skills[i].name);
-        if (i == banned) {
-            printf(" (used last turn)");
+    printf("\nChoose your technique:\n");
+    for (i = first; i <= last; i++)
+    {
+        printf("[%d] %s", i - first + 1, skills[i].name);
+        if (i == banned)
+        {
+            printf(" (Used last turn - Banned)");
         }
         printf("\n");
     }
 
-    while (1) {
-        choice = read_int("Pick a skill", 1, last - first + 1);
-        id = first + (choice - 1);             
-        if (id != banned) {            
+    while (1)
+    {
+        choice = read_int("Select option", 1, last - first + 1);
+        id = first + (choice - 1);
+        if (id != banned)
+        {
             return id;
         }
-        printf("You can't use the same skill twice in a row.\n");
+        printf("You can't use the same skill twice in a row. Choose another.\n");
     }
 }
 
-//CHOOSE WHICH ZONE TO ATTACK/DEFEND
-int zone_in_skill(SkillId id, int zone) {
+// CHOOSE WHICH ZONE TO ATTACK/DEFEND
+int zone_in_skill(SkillId id, int zone)
+{
     int i;
 
-    for(i=0; i<skills[id].target_count; i++) {
-        if(skills[id].targets[i] == zone) {return 1;}
+    for (i = 0; i < skills[id].target_count; i++)
+    {
+        if (skills[id].targets[i] == zone)
+        {
+            return 1;
+        }
     }
     return 0;
 }
 
-//ASK ZONES
-int ask_zone(SkillId id) {
-    int zone;
-    int j;
- 
-    while (1) {
-        printf("Aim at one of:");
-        for(j=0; j<skills[id].target_count; j++) {
-            printf(" %d", skills[id].targets[j]);
-        }
-        printf("\n");
+// ASK ZONES
+int ask_zone(SkillId id)
+{
+    int choice;
 
-        zone = read_int("Aim at zone ", 1, 6);
-        bool in_zone = zone_in_skill(id,zone);
-        if (in_zone) {
-            return zone;
-        }
-        else {
-            printf("That skill can't reach that zone.\n");
-        }
+    printf("\nChoose target zone:\n");
+    for (int j = 0; j < skills[id].target_count; j++)
+    {
+        printf("[%d] Zone %d\n", j + 1, skills[id].targets[j]);
     }
 
+    choice = read_int("Aim at option", 1, skills[id].target_count);
+    return skills[id].targets[choice - 1];
 }
 
 int ask_defense_zone(SkillId id)
@@ -109,8 +114,9 @@ int ask_defense_zone(SkillId id)
     return skills[id].targets[choice - 1];
 }
 
-//DISPLAY
-void print_mintonette_text() {
+// DISPLAY
+void print_mintonette_text()
+{
     printf(" __  __ ___ _   _ _____ ___  _   _ _____ _____ _____ _____ \n");
     printf("|  \\/  |_ _| \\ | |_   _/ _ \\| \\ | | ____|_   _|_   _| ____|\n");
     printf("| |\\/| || ||  \\| | | || | | |  \\| |  _|   | |   | | |  _|  \n");
@@ -118,27 +124,55 @@ void print_mintonette_text() {
     printf("|_|  |_|___|_| \\_| |_| \\___/|_| \\_|_____| |_|   |_| |_____|\n");
 }
 
-void print_mintonette_ball() {
-    printf("                     _______\n");
-    printf("                  .-'       '-.\n");
-    printf("                .'   \\  |  /   '.\n");
-    printf("               /      \\ | /      \\\n");
-    printf("              |________\\|/________|\n");
-    printf("              |        /|\\        |\n");
-    printf("               \\      / | \\      /\n");
-    printf("                '.   /  |  \\   .'\n");
-    printf("                  '-._______.-'\n");
+void print_mintonette_ball()
+{
+    printf("                        _______\n");
+    printf("                     .-'       '-.\n");
+    printf("                   .'   \\  |  /   '.\n");
+    printf("                  /      \\ | /      \\\n");
+    printf("                 |________\\|/________|\n");
+    printf("                 |        /|\\        |\n");
+    printf("                  \\      / | \\      /\n");
+    printf("                   '.   /  |  \\   .'\n");
+    printf("                     '-._______.-'\n");
 }
 
-void show_court(void)
+void print_skill_guide()
 {
-    printf("+---------------------------+\n");
-    
-    printf("     +-----------------+     \n");
-    printf("     |  1  |  2  |  3  |     \n");
-    printf("     |-----------------|     \n");
-    printf("     |  4  |  5  |  6  |     \n");
-    printf("     +-----------------+     \n");
+    printf("\n==================================================\n");
+    printf("                SKILL REFERENCE GUIDE             \n");
+    printf("==================================================\n");
+    printf("--- SERVE SKILLS (Opening Attack) ---\n");
+    printf("1. Underhand Serve | Fault:  5%% | Target: Zones 3, 4\n");
+    printf("   Hint: \"Free ball yan oh!\" (Forgiving defense)\n\n");
+    printf("2. Short Serve     | Fault:  5%% | Target: Zones 2, 3\n");
+    printf("   Hint: \"Yung unahan bantayan mo!\"\n\n");
+    printf("3. Overhand Serve  | Fault: 20%% | Target: Zones 1, 3, 5\n");
+    printf("   Hint: \"Handa… Awit! Sa gilid yan o gitna!\"\n\n");
+    printf("4. Jump Serve      | Fault: 30%% | Target: Zones 1, 3, 4, 6\n");
+    printf("   Hint: \"Bantayan niyo mga sulok!\" (High risk/reward)\n\n");
+
+    printf("--- COUNTER / ATTACK SKILLS (Rally Phase) ---\n");
+    printf("5. Deep Return     | Fault:  5%% | Target: Zones 1, 3, 4, 6\n");
+    printf("   Hint: \"Habol sa likod!\" (Forgiving defense)\n\n");
+    printf("6. Dink            | Fault: 20%% | Target: Zones 1, 2, 3\n");
+    printf("   Hint: \"Hulog sa unahan!\"\n\n");
+    printf("7. Spike           | Fault: 25%% | Target: Zones 2, 4, 5\n");
+    printf("   Hint: \"Aray mo!!! Spike sa mukha!\"\n\n");
+    printf("8. Cut Shot        | Fault: 20%% | Target: Zones 3, 5, 6\n");
+    printf("   Hint: \"Abang! Drop ball yan sa harap!\"\n");
+    printf("==================================================\n");
+}
+
+void show_court(int attacker, int defender)
+{
+    printf("\n     PLAYER %d | ATTACK\n", attacker);
+    printf("   +-------+-------+-------+\n");
+    printf("   |   1   |   2   |   3   |\n");
+    printf("   +-------+-------+-------+\n");
+    printf("   |   4   |   5   |   6   |\n");
+    printf("   +-------+-------+-------+\n");
+    printf("     PLAYER %d | DEFENSE\n\n", defender);
 }
 
 void print_scoreboard(int scores[2], int server)
@@ -154,166 +188,196 @@ void print_scoreboard(int scores[2], int server)
     printf("+---------------------------+\n\n");
 }
 
-
-int main(int argc,  char *argv[]){
+int main(int argc, char *argv[])
+{
     // variable for socket connection, port number, error tracker
-    int client_sock,  port_no, n;
-    struct sockaddr_in server_addr; 
+    int client_sock, port_no, n;
+    struct sockaddr_in server_addr;
     struct hostent *server;
 
     // check if correct arguments are ran (./volley_client <IP> <Port>)
-    if (argc < 3) {
-        printf("Usage: %s hostname port_no\n",  argv[0]);
+    if (argc < 3)
+    {
+        printf("Usage: %s hostname port_no\n", argv[0]);
         exit(1);
     }
-    
-    port_no = (argc>=3) ? atoi(argv[2]) : PORT; // Default port if not provided
+
+    port_no = (argc >= 3) ? atoi(argv[2]) : PORT; // Default port if not provided
 
     print_mintonette_text();
     print_mintonette_ball();
-    printf("\n\n\n\n");
+    print_skill_guide();
+    printf("\n");
 
     printf("Client starting ...\n");
     // create new TCP network socket
-    client_sock = socket(AF_INET,  SOCK_STREAM,  0);
-    if (client_sock < 0) 
+    client_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (client_sock < 0)
         die_with_error("Error: socket() Failed.\n");
 
     server = gethostbyname(argv[1]);
-    if (server == NULL) {
+    if (server == NULL)
+    {
         die_with_error("Error: No such host.\n");
     }
-    
-    //CONNECTION TO SERVER
+
+    // CONNECTION TO SERVER
     port_no = atoi(argv[2]);
-    bzero((char *) &server_addr,  sizeof(server_addr));
+    bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr,  
-         (char *)&server_addr.sin_addr.s_addr, 
-         server->h_length);
-         
+    bcopy((char *)server->h_addr,
+          (char *)&server_addr.sin_addr.s_addr,
+          server->h_length);
+
     server_addr.sin_port = htons(port_no);
 
     // connect client to running server
     printf("Connecting to server at port %d...\n", port_no);
     if (connect(client_sock, (struct sockaddr *)&server_addr, sizeof server_addr) < 0)
         die_with_error("Error: connect() Failed.\n");
-    printf("Connection successful! Waiting for game to start... \n");
+    printf("Connection successful! Waiting for game to start...\n");
 
     GameState state;
     PlayerInput my_input;
     int game_over = 0;
 
-    while (!game_over) {
-        //RECEIVE FROM SERVER
+    while (!game_over)
+    {
+        // RECEIVE FROM SERVER
         n = recv(client_sock, &state, sizeof(GameState), 0);
-        if (n <= 0) {
+        if (n <= 0)
+        {
             printf("Server disconnected.\n");
             break;
         }
 
-        bzero(&my_input, sizeof(PlayerInput)); //clear memory for memory input for current turn
-        my_input.player_id = state.player_id; //turn the input to client (client is player 2 with player_id 1)
+        bzero(&my_input, sizeof(PlayerInput)); // clear memory for input for current turn
+        my_input.player_id = state.player_id;
 
-        switch (state.state_type) {
-            case STATE_WAIT: {
-                print_scoreboard(state.scores, state.server-1);
-                show_court();
-                printf("You are Player %d.\n", state.player_id);
-                if (state.attacker == state.player_id) {
-                    printf("Waiting for the server...\n");
-                } else {
-                    printf("Player %d is attacking...\n", state.attacker);
-                }
-                break;
+        switch (state.state_type)
+        {
+        case STATE_WAIT:
+        {
+            int defender = (state.attacker == 1) ? 2 : 1;
+            print_scoreboard(state.scores, state.server - 1);
+            show_court(state.attacker, defender);
+            printf("You are Player %d.\n", state.player_id);
+            if (state.attacker == state.player_id)
+            {
+                printf("Waiting for the server...\n");
             }
-
-            case STATE_PICK_SKILL: {
-                int first, last;
-                print_scoreboard(state.scores, state.server-1);
-                show_court();
-                if (state.rally_count == 0) {
-                        printf("[YOUR TURN TO SERVE].\n");
-                        first = SERVE_UNDERHAND;
-                        last = SERVE_JUMP;
-                } else {
-                        printf("[YOUR TURN TO ATTACK].\n");
-                        first = COUNTER_DEEP;
-                        last = COUNTER_CUT;
-                }
-
-                my_input.skill_id = ask_skill(first, last, state.last_skill[state.player_id-1]);
-                my_input.target_zone = ask_zone(my_input.skill_id);
-                my_input.guess_zone = 0;
-
-                //Send PlayerInput back to Server
-                n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
-                if (n < 0) die_with_error("Error: send() Failed.");
-                printf("Move sent! Waiting for server...\n");
-                break;
+            else
+            {
+                printf("Player %d is attacking...\n", state.attacker);
             }
-
-            case STATE_PICK_DEFENSE: {
-                SkillId used = state.last_action_skill;
-                print_scoreboard(state.scores, state.server-1);
-                show_court();
-
-
-                printf("[YOUR TURN TO DEFEND].\n");
-                // Display Tagalog Hint
-                printf("\"%s\"\n\n", skills[used].hint);
-                printf("Player %d used: %s\n", state.attacker, skills[used].name);
-
-                // Show targets for information context
-                printf("Incoming Target Zones:");
-                for (int j = 0; j < skills[used].target_count; j++)
-                {
-                    printf(" Zone %d", skills[used].targets[j]);
-                }
-                printf("\n\n");
-                
-                my_input.guess_zone = ask_defense_zone(used);
-
-                n = send(client_sock, &my_input, sizeof(PlayerInput), 0); 
-                if (n < 0) die_with_error("Error: send() Failed.\n");
-                printf("Defense sent. Waiting for server...\n");
-                break;
-            }
-
-            case STATE_RESULT: {
-                SkillId used = state.last_action_skill;
-
-                if (state.fault_occurred) {
-                    printf("\n>>> FAULT! Player %d messed up their execution (%s)! <<<\n",
-                    state.attacker, skills[used].name);
-                } else if (state.was_caught) {
-                    printf("\n>>> CAUGHT! Player %d successfully returned the ball! <<<\n\n", state.defender);
-                } else {
-                    printf("\n>>> MISSED! It landed in Zone %d. Player %d wins the point! <<<\n", state.landing_zone, state.attacker);
-                }
-
-                if (state.point_winner != 0) {
-                    printf("\nPlayer %d wins the point!\n", state.point_winner);
-                }
-                print_scoreboard(state.scores, state.server-1);
-                break;
-            }
-
-            case STATE_GAME_OVER:{
-                print_scoreboard(state.scores, state.server-1);
-                printf("\n==================================================\n");
-                printf("🏆 PLAYER %d WINS THE VOLLEYBALL MATCH! 🏆\n", state.point_winner);
-                if (state.point_winner == state.player_id) {
-                    printf("You won!\n");
-                } else {
-                    printf("You lost. Better luck next time!\n");
-                }
-                printf("==================================================\n");
-                game_over = 1;      // exits the while loop
-                break;
-            }
+            break;
         }
-    }    
-    close (client_sock);
+
+        case STATE_PICK_SKILL:
+        {
+            int first, last;
+            int defender = (state.attacker == 1) ? 2 : 1;
+            print_scoreboard(state.scores, state.server - 1);
+            show_court(state.attacker, defender);
+            if (state.rally_count == 0)
+            {
+                printf("Action: SERVE\n");
+                first = SERVE_UNDERHAND;
+                last = SERVE_JUMP;
+            }
+            else
+            {
+                printf("Action: COUNTER / ATTACK\n");
+                first = COUNTER_DEEP;
+                last = COUNTER_CUT;
+            }
+
+            my_input.skill_id = ask_skill(first, last, state.last_skill[state.player_id - 1]);
+            my_input.target_zone = ask_zone(my_input.skill_id);
+            my_input.guess_zone = 0;
+
+            // Send PlayerInput back to Server
+            n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
+            if (n < 0)
+                die_with_error("Error: send() Failed.");
+            printf("Move sent! Waiting for server...\n");
+            break;
+        }
+
+        case STATE_PICK_DEFENSE:
+        {
+            SkillId used = state.last_action_skill;
+            int defender = (state.attacker == 1) ? 2 : 1;
+            print_scoreboard(state.scores, state.server - 1);
+            show_court(state.attacker, defender);
+
+            printf("================================\n");
+            printf("         PLAYER %d TURN\n", state.player_id);
+            printf("================================\n");
+            printf("\"%s\"\n\n", skills[used].hint);
+            printf("Player %d used: %s\n", state.attacker, skills[used].name);
+
+            printf("Incoming Target Zones:");
+            for (int j = 0; j < skills[used].target_count; j++)
+            {
+                printf(" Zone %d", skills[used].targets[j]);
+            }
+            printf("\n\n");
+
+            my_input.guess_zone = ask_defense_zone(used);
+
+            n = send(client_sock, &my_input, sizeof(PlayerInput), 0);
+            if (n < 0)
+                die_with_error("Error: send() Failed.");
+            printf("Defense sent. Waiting for server...\n");
+            break;
+        }
+
+        case STATE_RESULT:
+        {
+            SkillId used = state.last_action_skill;
+
+            if (state.fault_occurred)
+            {
+                printf("\n>>> FAULT! Player %d messed up their execution (%s)! <<<\n",
+                       state.attacker, skills[used].name);
+            }
+            else if (state.was_caught)
+            {
+                printf("\n>>> CAUGHT! Player %d successfully returned the ball! <<<\n\n", state.defender);
+            }
+            else
+            {
+                printf("\n>>> MISSED! It landed in Zone %d. Player %d wins the point! <<<\n", state.landing_zone, state.attacker);
+            }
+
+            if (state.point_winner != 0)
+            {
+                printf("\nPlayer %d wins the point!\n", state.point_winner);
+            }
+            print_scoreboard(state.scores, state.server - 1);
+            break;
+        }
+
+        case STATE_GAME_OVER:
+        {
+            print_scoreboard(state.scores, state.server - 1);
+            printf("\n==================================================\n");
+            printf("🏆 PLAYER %d WINS THE VOLLEYBALL MATCH! 🏆\n", state.point_winner);
+            if (state.point_winner == state.player_id)
+            {
+                printf("You won!\n");
+            }
+            else
+            {
+                printf("You lost. Better luck next time!\n");
+            }
+            printf("==================================================\n");
+            game_over = 1; // exits the while loop
+            break;
+        }
+        }
+    }
+    close(client_sock);
     return 0;
 }
