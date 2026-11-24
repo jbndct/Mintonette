@@ -259,7 +259,6 @@ int main(int argc, char *argv[])
         case STATE_WAIT:
         {
             int defender = (state.attacker == 1) ? 2 : 1;
-            print_scoreboard(state.scores, state.server - 1);
             show_court(state.attacker, defender);
             printf("You are Player %d.\n", state.player_id);
             if (state.attacker == state.player_id)
@@ -277,7 +276,6 @@ int main(int argc, char *argv[])
         {
             int first, last;
             int defender = (state.attacker == 1) ? 2 : 1;
-            print_scoreboard(state.scores, state.server - 1);
             show_court(state.attacker, defender);
             if (state.rally_count == 0)
             {
@@ -308,7 +306,6 @@ int main(int argc, char *argv[])
         {
             SkillId used = state.last_action_skill;
             int defender = (state.attacker == 1) ? 2 : 1;
-            print_scoreboard(state.scores, state.server - 1);
             show_court(state.attacker, defender);
 
             printf("================================\n");
@@ -354,8 +351,8 @@ int main(int argc, char *argv[])
             if (state.point_winner != 0)
             {
                 printf("\nPlayer %d wins the point!\n", state.point_winner);
+                print_scoreboard(state.scores, state.server - 1);
             }
-            print_scoreboard(state.scores, state.server - 1);
             break;
         }
 
