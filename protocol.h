@@ -1,5 +1,9 @@
 #ifndef PROTOCOL_H
-#define PROTOCOL_H 
+#define PROTOCOL_H
+
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
@@ -46,41 +50,71 @@ static const Skill skills[SKILL_COUNT] = {
     {"Deep Return", {1, 3, 4, 6}, 4, NEIGHBOR, 5, "Habol sa likod!"},
     {"Dink", {1, 2, 3}, 3, EXACT, 20, "Hulog sa unahan!"},
     {"Spike", {2, 4, 5}, 3, EXACT, 25, "Aray mo!!! Spike sa mukha!"},
-    {"Cut Shot", {3, 5, 6}, 3, EXACT, 20, "Abang! Drop ball yan sa harap!"}};
+    {"Cut Shot", {3, 5, 6}, 3, EXACT, 20, "Abang! Drop ball yan sa harap!"}
+};
 
 typedef enum {
-    STATE_WAIT,          //waiting
-    STATE_PICK_SKILL,    //player attacking
-    STATE_PICK_DEFENSE,  //player defending
-    STATE_RESULT,        //result of the match
-    STATE_GAME_OVER
+    STATE_WAIT,          // waiting
+    STATE_PICK_SKILL,    // player attacking
+    STATE_PICK_DEFENSE,  // player defending
+    STATE_RESULT,        // result of the turn/point
+    STATE_GAME_OVER,
+    STATE_OPPONENT_LEFT  // opponent disconnected mid-match
 } StateType;
 
-// struct for move choices made by player
+// Fixed-width int32_t fields have natural 4-byte alignment (no padding needed)
 typedef struct {
-    int player_id;
-    int skill_id;
-    int target_zone;
-    int guess_zone;
+    int32_t player_id;
+    int32_t skill_id;
+    int32_t target_zone;
+    int32_t guess_zone;
 } PlayerInput;
 
-// struct for current game state, for synchonization
 typedef struct {
-    int player_id;
-    int scores[2];
-    int attacker;
-    int defender;
-    int server;
-    int rally_count;
-    int last_skill[2];
-    
-    int state_type;
-    int last_action_skill;
-    int landing_zone;
-    int defender_guess;
-    int was_caught;
-    int fault_occurred;
-    int point_winner;
+    int32_t player_id;
+    int32_t scores[2];
+    int32_t attacker;
+    int32_t defender;
+    int32_t server;
+    int32_t rally_count;
+    int32_t last_serve[2];
+    int32_t last_counter[2];
+
+    int32_t state_type;
+    int32_t last_action_skill;
+    int32_t landing_zone;
+    int32_t defender_guess;
+    int32_t was_caught;
+    int32_t fault_occurred;
+    int32_t point_winner;
 } GameState;
+
+_Static_assert(sizeof(PlayerInput) == 16, "Unexpected PlayerInput padding");
+_Static_assert(sizeof(GameState) == 72, "Unexpected GameState padding");
+
+// Reliable TCP send/recv helpers to prevent partial packet reads/writes
+static inline int send_all(int sock, const void *buf, size_t len)
+{
+    size_t total = 0;
+    const char *p = (const char *)buf;
+    while (total < len) {
+        ssize_t n = send(sock, p + total, len - total, 0);
+        if (n <= 0) return -1;
+        total += (size_t)n;
+    }
+    return 0;
+}
+
+static inline int recv_all(int sock, void *buf, size_t len)
+{
+    size_t total = 0;
+    char *p = (char *)buf;
+    while (total < len) {
+        ssize_t n = recv(sock, p + total, len - total, 0);
+        if (n <= 0) return -1;
+        total += (size_t)n;
+    }
+    return 0;
+}
 
 #endif
