@@ -98,16 +98,35 @@ int ask_skill(int first, int last, int banned, int client_sock)
     }
 }
 
+int is_valid_target(SkillId id, int zone)
+{
+    for (int j = 0; j < skills[id].target_count; j++)
+    {
+        if (skills[id].targets[j] == zone)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int ask_zone(SkillId id, int client_sock)
 {
     printf("\n" CLR_BOLD "Choose target zone:" CLR_RESET "\n");
     for (int j = 0; j < skills[id].target_count; j++)
     {
-        printf(CLR_CYAN "[%d]" CLR_RESET " Zone %d\n", j + 1, skills[id].targets[j]);
+        printf(CLR_CYAN "[%d]" CLR_RESET " Zone %d\n", skills[id].targets[j], skills[id].targets[j]);
     }
 
-    int choice = read_int("Aim at option", 1, skills[id].target_count, client_sock);
-    return skills[id].targets[choice - 1];
+    while (1)
+    {
+        int zone = read_int("Aim at zone", 1, 6, client_sock);
+        if (is_valid_target(id, zone))
+        {
+            return zone;
+        }
+        printf(CLR_RED "Invalid target for %s. Pick one of the listed zones.\n" CLR_RESET, skills[id].name);
+    }
 }
 
 int ask_defense_zone(SkillId id, int client_sock)
@@ -115,11 +134,18 @@ int ask_defense_zone(SkillId id, int client_sock)
     printf("\n" CLR_BOLD "Choose a defensive zone to protect:" CLR_RESET "\n");
     for (int j = 0; j < skills[id].target_count; j++)
     {
-        printf(CLR_YELLOW "[%d]" CLR_RESET " Zone %d\n", j + 1, skills[id].targets[j]);
+        printf(CLR_YELLOW "[%d]" CLR_RESET " Zone %d\n", skills[id].targets[j], skills[id].targets[j]);
     }
 
-    int choice = read_int("Protect option", 1, skills[id].target_count, client_sock);
-    return skills[id].targets[choice - 1];
+    while (1)
+    {
+        int zone = read_int("Protect zone", 1, 6, client_sock);
+        if (is_valid_target(id, zone))
+        {
+            return zone;
+        }
+        printf(CLR_RED "Invalid zone for %s. Pick one of the listed zones.\n" CLR_RESET, skills[id].name);
+    }
 }
 
 void print_mintonette_text(void)
